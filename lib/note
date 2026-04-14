@@ -1,0 +1,15 @@
+// Autocomplete<CountryResult>(
+            //   optionsBuilder: (tripDestination) async {
+            //     if (tripDestination.text == '') {
+            //       return const Iterable<CountryResult>.empty();
+            //     }
+            //     return await GeocodingService().getCountry(
+            //       tripDestination.text,
+            //     );
+            //   },
+            //   displayStringForOption: (CountryResult option) => option.name,
+
+            //   onSelected: (CountryResult selectedCountry) {
+            //     print(selectedCountry.name);
+            //   },
+            // ),
