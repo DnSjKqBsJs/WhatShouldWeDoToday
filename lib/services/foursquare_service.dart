@@ -44,6 +44,8 @@ class FoursquareService {
     }
     return foursquarePlaceFound;
   }
+
+  
 }
 
 class FoursquarePlace {

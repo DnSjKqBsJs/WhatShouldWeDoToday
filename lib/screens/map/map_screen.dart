@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
@@ -22,7 +23,6 @@ class _MapScreenState extends State<MapScreen> {
   String? currentTrip = '';
   bool _searchOpen = false;
   final search = TextEditingController();
-  List<FoursquarePlace> _searchResults = [];
   FoursquarePlace selectedPlace = FoursquarePlace(
     fsqPlaceId: '',
     name: '',
@@ -30,6 +30,7 @@ class _MapScreenState extends State<MapScreen> {
     categorie: [],
     formattedAddress: '',
   );
+  FoursquarePlace? _previewPlace;
 
   void moveCam() {
     final trip = Provider.of<AppState>(context, listen: false).currentTrip;
@@ -122,7 +123,7 @@ class _MapScreenState extends State<MapScreen> {
                         return Container(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(20),
-                            color: Colors.blue,
+                            color: const Color.fromARGB(255, 255, 255, 255),
                           ),
                           child: Center(
                             child: Text(
@@ -163,6 +164,20 @@ class _MapScreenState extends State<MapScreen> {
                           )
                           .toList(),
                     ),
+                  ),
+                  MarkerLayer(
+                    markers: _previewPlace != null
+                        ? [
+                            Marker(
+                              child: Icon(
+                                Icons.location_pin,
+                                color: Colors.blue,
+                                size: 40,
+                              ),
+                              point: _previewPlace!.latLng,
+                            ),
+                          ]
+                        : [],
                   ),
                 ],
               );
@@ -205,6 +220,59 @@ class _MapScreenState extends State<MapScreen> {
                             option.name,
                         onSelected: (FoursquarePlace selectedplace) {
                           selectedPlace = selectedplace;
+                          _mapController.move(selectedplace.latLng, 15);
+                          setState(() {
+                            _previewPlace = selectedplace;
+                          });
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            useSafeArea: true,
+
+                            builder: (context) {
+                              return Container(
+                                padding: EdgeInsets.all(16),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(selectedplace.name),
+                                    Text(selectedplace.formattedAddress),
+                                    Text(selectedplace.categorie[0]),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        PlaceService().addPlace(
+                                          PlaceModel(
+                                            id: selectedplace.fsqPlaceId,
+                                            tripId: Provider.of<AppState>(
+                                              context,
+                                              listen: false,
+                                            ).currentTrip!.id,
+                                            creatorId: FirebaseAuth
+                                                .instance
+                                                .currentUser!
+                                                .uid,
+                                            lat: selectedplace.latLng.latitude,
+                                            lng: selectedplace.latLng.longitude,
+                                            name: selectedplace.name,
+                                            description: '',
+                                            tags: [],
+                                          ),
+                                        );
+                                        Navigator.pop(context);
+                                        setState(() {
+                                          _previewPlace = null;
+                                        });
+                                        _refresh();
+                                      },
+                                      child: Text("Add to Trip"),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ).then((_) {
+                            setState(() => _previewPlace = null);
+                          });
                         },
                       ),
                     ),
