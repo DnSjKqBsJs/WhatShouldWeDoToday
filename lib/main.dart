@@ -21,6 +21,7 @@ class MyApp extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (_) => AppState(),
       child: MaterialApp(
+        debugShowCheckedModeBanner: false,
         title: 'WanderMap',
         home: StreamBuilder(
           stream: FirebaseAuth.instance.authStateChanges(),

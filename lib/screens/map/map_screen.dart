@@ -3,8 +3,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:japan_app/models/place_model.dart';
 import 'package:japan_app/screens/trip/add_place_screen.dart';
-import 'package:japan_app/screens/trip/create_trip_screen.dart';
 import 'package:japan_app/services/app_state.dart';
+import 'package:japan_app/services/foursquare_service.dart';
 import 'package:japan_app/services/place_service.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
@@ -20,6 +20,16 @@ class _MapScreenState extends State<MapScreen> {
   late Future<List<PlaceModel>> _future;
   final _mapController = MapController();
   String? currentTrip = '';
+  bool _searchOpen = false;
+  final search = TextEditingController();
+  List<FoursquarePlace> _searchResults = [];
+  FoursquarePlace selectedPlace = FoursquarePlace(
+    fsqPlaceId: '',
+    name: '',
+    latLng: LatLng(0, 0),
+    categorie: [],
+    formattedAddress: '',
+  );
 
   void moveCam() {
     final trip = Provider.of<AppState>(context, listen: false).currentTrip;
@@ -66,100 +76,152 @@ class _MapScreenState extends State<MapScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: FutureBuilder<List<PlaceModel>>(
-        future: _future,
-        builder: (context, asyncSnapshot) {
-          final places = asyncSnapshot.data ?? [];
-          return FlutterMap(
-            mapController: _mapController,
-            options: MapOptions(
-              onLongPress: (tapPosition, point) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) {
-                      return AddPlaceScreen(
-                        lat: point.latitude,
-                        lng: point.longitude,
-                        tripId: Provider.of<AppState>(
-                          context,
-                          listen: false,
-                        ).currentTrip?.id,
-                      );
-                    },
-                  ),
-                ).then((_) => _refresh());
-              },
-              initialCenter: LatLng(35.6762, 139.6503),
-              initialZoom: 12,
-            ),
-            children: [
-              TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.example.japan_app',
-              ),
-              MarkerClusterLayerWidget(
-                options: MarkerClusterLayerOptions(
-                  maxClusterRadius: 45,
-                  size: const Size(40, 40),
-                  alignment: Alignment.center,
-                  padding: const EdgeInsets.all(50),
-                  maxZoom: 15,
-                  builder: (context, markers) {
-                    return Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        color: Colors.blue,
+      body: Stack(
+        children: [
+          FutureBuilder<List<PlaceModel>>(
+            future: _future,
+            builder: (context, asyncSnapshot) {
+              final places = asyncSnapshot.data ?? [];
+              return FlutterMap(
+                mapController: _mapController,
+                options: MapOptions(
+                  onLongPress: (tapPosition, point) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) {
+                          return AddPlaceScreen(
+                            lat: point.latitude,
+                            lng: point.longitude,
+                            tripId: Provider.of<AppState>(
+                              context,
+                              listen: false,
+                            ).currentTrip?.id,
+                          );
+                        },
                       ),
-                      child: Center(
-                        child: Text(
-                          markers.length.toString(),
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    );
+                    ).then((_) => _refresh());
                   },
-                  markers: places
-                      .map(
-                        (place) => Marker(
-                          point: LatLng(place.lat, place.lng),
-                          child: GestureDetector(
-                            child: Icon(Icons.location_pin, color: Colors.red),
-                            onTap: () {
-                              showModalBottomSheet(
-                                context: context,
-                                isScrollControlled: true,
-                                useSafeArea: true,
-                                builder: (context) => Container(
-                                  padding: EdgeInsets.all(16),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(place.name),
-                                      Text(place.description),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      )
-                      .toList(),
+                  initialCenter: LatLng(35.6762, 139.6503),
+                  initialZoom: 12,
                 ),
+                children: [
+                  TileLayer(
+                    urlTemplate:
+                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    userAgentPackageName: 'com.example.japan_app',
+                  ),
+                  MarkerClusterLayerWidget(
+                    options: MarkerClusterLayerOptions(
+                      maxClusterRadius: 45,
+                      size: const Size(40, 40),
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.all(50),
+                      maxZoom: 15,
+                      builder: (context, markers) {
+                        return Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            color: Colors.blue,
+                          ),
+                          child: Center(
+                            child: Text(
+                              markers.length.toString(),
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        );
+                      },
+                      markers: places
+                          .map(
+                            (place) => Marker(
+                              point: LatLng(place.lat, place.lng),
+                              child: GestureDetector(
+                                child: Icon(
+                                  Icons.location_pin,
+                                  color: Colors.red,
+                                ),
+                                onTap: () {
+                                  showModalBottomSheet(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    useSafeArea: true,
+                                    builder: (context) => Container(
+                                      padding: EdgeInsets.all(16),
+                                      child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(place.name),
+                                          Text(place.description),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+          if (Provider.of<AppState>(context, listen: false).currentTrip != null)
+            Positioned(
+              top: 5,
+              left: 3,
+              right: 3,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  FloatingActionButton(
+                    heroTag: null,
+                    onPressed: () {},
+                    child: Icon(Icons.add),
+                  ),
+                  Padding(padding: EdgeInsets.all(3)),
+                  if (_searchOpen)
+                    Expanded(
+                      child: Autocomplete<FoursquarePlace>(
+                        optionsBuilder: (search) {
+                          if (search.text == '') {
+                            return const Iterable<FoursquarePlace>.empty();
+                          }
+                          return FoursquareService().searchPlaces(
+                            search.text,
+                            Provider.of<AppState>(
+                              context,
+                              listen: false,
+                            ).currentTrip!.centerLat,
+                            Provider.of<AppState>(
+                              context,
+                              listen: false,
+                            ).currentTrip!.centerLng,
+                          );
+                        },
+                        displayStringForOption: (FoursquarePlace option) =>
+                            option.name,
+                        onSelected: (FoursquarePlace selectedplace) {
+                          selectedPlace = selectedplace;
+                        },
+                      ),
+                    ),
+                  Padding(padding: EdgeInsets.all(3)),
+                  FloatingActionButton(
+                    heroTag: null,
+                    onPressed: () {
+                      setState(() {
+                        _searchOpen = !_searchOpen;
+                      });
+                    },
+                    child: Icon(Icons.search),
+                  ),
+                ],
               ),
-            ],
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => CreateTripScreen()),
-          );
-        },
-        child: Icon(Icons.flight),
+            ),
+        ],
       ),
     );
   }

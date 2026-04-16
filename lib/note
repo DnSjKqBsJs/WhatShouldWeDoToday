@@ -13,3 +13,25 @@
             //     print(selectedCountry.name);
             //   },
             // ),
+
+
+
+            // controller: search,
+                        // decoration: InputDecoration(
+                        //   border: OutlineInputBorder(),
+                        //   filled: true,
+                        // ),
+                        // onChanged: (value) async {
+                        //   _searchResults = await FoursquareService()
+                        //       .searchPlaces(
+                        //         search.text,
+                        //         Provider.of<AppState>(
+                        //           context,
+                        //           listen: false,
+                        //         ).currentTrip!.centerLat,
+                        //         Provider.of<AppState>(
+                        //           context,
+                        //           listen: false,
+                        //         ).currentTrip!.centerLng,
+                        //       );
+                        // },
