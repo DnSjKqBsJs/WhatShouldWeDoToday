@@ -4,6 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:japan_app/models/place_model.dart';
 import 'package:japan_app/screens/trip/add_place_screen.dart';
+import 'package:japan_app/screens/trip/edit_place_screen.dart';
 import 'package:japan_app/services/app_state.dart';
 import 'package:japan_app/services/foursquare_service.dart';
 import 'package:japan_app/services/place_service.dart';
@@ -23,6 +24,7 @@ class _MapScreenState extends State<MapScreen> {
   String? currentTrip = '';
   bool _searchOpen = false;
   final search = TextEditingController();
+  late TextEditingController _autocompleteController;
   FoursquarePlace selectedPlace = FoursquarePlace(
     fsqPlaceId: '',
     name: '',
@@ -91,13 +93,20 @@ class _MapScreenState extends State<MapScreen> {
                       context,
                       MaterialPageRoute(
                         builder: (context) {
-                          return AddPlaceScreen(
-                            lat: point.latitude,
-                            lng: point.longitude,
-                            tripId: Provider.of<AppState>(
-                              context,
-                              listen: false,
-                            ).currentTrip?.id,
+                          return EditPlaceScreen(
+                            place: PlaceModel(
+                              id: '',
+                              tripId: Provider.of<AppState>(
+                                context,
+                                listen: false,
+                              ).currentTrip!.id,
+                              creatorId: FirebaseAuth.instance.currentUser!.uid,
+                              lat: point.latitude,
+                              lng: point.longitude,
+                              name: '',
+                              description: '',
+                              tags: [],
+                            ),
                           );
                         },
                       ),
@@ -123,7 +132,7 @@ class _MapScreenState extends State<MapScreen> {
                         return Container(
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(20),
-                            color: const Color.fromARGB(255, 255, 255, 255),
+                            color: const Color.fromRGBO(215, 126, 126, 1),
                           ),
                           child: Center(
                             child: Text(
@@ -200,6 +209,17 @@ class _MapScreenState extends State<MapScreen> {
                   if (_searchOpen)
                     Expanded(
                       child: Autocomplete<FoursquarePlace>(
+                        fieldViewBuilder:
+                            (context, controller, focusNode, onSubmitted) {
+                              _autocompleteController = controller;
+                              return TextField(
+                                controller: controller,
+                                focusNode: focusNode,
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(),
+                                ),
+                              );
+                            },
                         optionsBuilder: (search) {
                           if (search.text == '') {
                             return const Iterable<FoursquarePlace>.empty();
@@ -256,6 +276,7 @@ class _MapScreenState extends State<MapScreen> {
                                             name: selectedplace.name,
                                             description: '',
                                             tags: [],
+                                            imageUrls: [],
                                           ),
                                         );
                                         Navigator.pop(context);
@@ -271,6 +292,7 @@ class _MapScreenState extends State<MapScreen> {
                               );
                             },
                           ).then((_) {
+                            _autocompleteController.clear();
                             setState(() => _previewPlace = null);
                           });
                         },
