@@ -1,13 +1,14 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:japan_app/models/place_model.dart';
-import 'package:japan_app/screens/trip/add_place_screen.dart';
 import 'package:japan_app/screens/trip/edit_place_screen.dart';
 import 'package:japan_app/services/app_state.dart';
 import 'package:japan_app/services/foursquare_service.dart';
 import 'package:japan_app/services/place_service.dart';
+import 'package:japan_app/widgets/cluster_marker.dart';
+import 'package:japan_app/widgets/place_marker.dart';
+import 'package:japan_app/widgets/search_bar_widget.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 
@@ -22,16 +23,7 @@ class _MapScreenState extends State<MapScreen> {
   late Future<List<PlaceModel>> _future;
   final _mapController = MapController();
   String? currentTrip = '';
-  bool _searchOpen = false;
   final search = TextEditingController();
-  late TextEditingController _autocompleteController;
-  FoursquarePlace selectedPlace = FoursquarePlace(
-    fsqPlaceId: '',
-    name: '',
-    latLng: LatLng(0, 0),
-    categorie: [],
-    formattedAddress: '',
-  );
   FoursquarePlace? _previewPlace;
 
   void moveCam() {
@@ -122,87 +114,17 @@ class _MapScreenState extends State<MapScreen> {
                       padding: const EdgeInsets.all(50),
                       maxZoom: 15,
                       builder: (context, markers) {
-                        return Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(20),
-                            color: const Color.fromRGBO(215, 126, 126, 1),
-                          ),
-                          child: Center(
-                            child: Text(
-                              markers.length.toString(),
-                              style: const TextStyle(color: Colors.white),
-                            ),
-                          ),
-                        );
+                        return ClusterMarker(markers: markers);
                       },
                       markers: places
                           .map(
                             (place) => Marker(
                               point: LatLng(place.lat, place.lng),
-                              child: GestureDetector(
-                                child: Icon(
-                                  Icons.location_pin,
-                                  color: Colors.red,
-                                ),
-                                onTap: () {
-                                  showModalBottomSheet(
-                                    context: context,
-                                    isScrollControlled: true,
-                                    useSafeArea: true,
-                                    builder: (context) => Container(
-                                      padding: EdgeInsets.all(16),
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Text(place.name),
-                                          Text(place.description),
-                                          Center(
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                ElevatedButton(
-                                                  onPressed: () {
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder: (context) {
-                                                          return EditPlaceScreen(
-                                                            place: place,
-                                                          );
-                                                        },
-                                                      ),
-                                                    ).then((_) {
-                                                      Navigator.pop(context);
-                                                      _refresh();
-                                                    });
-                                                  },
-                                                  child: Text('Update'),
-                                                ),
-                                                Padding(
-                                                  padding: EdgeInsets.only(
-                                                    right: 10,
-                                                  ),
-                                                ),
-                                                ElevatedButton(
-                                                  onPressed: () =>
-                                                      PlaceService()
-                                                          .deletePlace(place)
-                                                          .then((value) {
-                                                            Navigator.pop(
-                                                              context,
-                                                            );
-                                                            _refresh();
-                                                          }),
-                                                  child: Text('Delete'),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
+                              child: PlaceMarker(
+                                place: place,
+                                onRefresh: () {
+                                  Navigator.pop(context);
+                                  _refresh();
                                 },
                               ),
                             ),
@@ -229,178 +151,17 @@ class _MapScreenState extends State<MapScreen> {
             },
           ),
           if (Provider.of<AppState>(context, listen: false).currentTrip != null)
-            Positioned(
-              top: 5,
-              left: 3,
-              right: 3,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  FloatingActionButton(
-                    heroTag: null,
-                    onPressed: () {},
-                    child: Icon(Icons.add),
-                  ),
-                  Padding(padding: EdgeInsets.all(3)),
-                  if (_searchOpen)
-                    Expanded(
-                      child: Autocomplete<FoursquarePlace>(
-                        fieldViewBuilder:
-                            (context, controller, focusNode, onSubmitted) {
-                              _autocompleteController = controller;
-                              return TextField(
-                                controller: controller,
-                                focusNode: focusNode,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(),
-                                ),
-                              );
-                            },
-                        optionsBuilder: (search) {
-                          if (search.text == '') {
-                            return const Iterable<FoursquarePlace>.empty();
-                          }
-                          return FoursquareService().searchPlaces(
-                            search.text,
-                            Provider.of<AppState>(
-                              context,
-                              listen: false,
-                            ).currentTrip!.centerLat,
-                            Provider.of<AppState>(
-                              context,
-                              listen: false,
-                            ).currentTrip!.centerLng,
-                          );
-                        },
-                        displayStringForOption: (FoursquarePlace option) =>
-                            option.name,
-                        onSelected: (FoursquarePlace selectedplace) {
-                          selectedPlace = selectedplace;
-                          _mapController.move(selectedplace.latLng, 15);
-                          setState(() {
-                            _previewPlace = selectedplace;
-                          });
-                          showModalBottomSheet(
-                                context: context,
-                                isScrollControlled: true,
-                                useSafeArea: true,
-
-                                builder: (context) {
-                                  return Container(
-                                    padding: EdgeInsets.all(16),
-                                    child: Column(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(selectedplace.name),
-                                        Text(selectedplace.formattedAddress),
-                                        Text(selectedplace.categorie[0]),
-                                        Center(
-                                          child: Row(
-                                            children: [
-                                              ElevatedButton(
-                                                onPressed: () {
-                                                  PlaceModel place = PlaceModel(
-                                                    id: selectedplace
-                                                        .fsqPlaceId,
-                                                    tripId:
-                                                        Provider.of<AppState>(
-                                                          context,
-                                                          listen: false,
-                                                        ).currentTrip!.id,
-                                                    creatorId: FirebaseAuth
-                                                        .instance
-                                                        .currentUser!
-                                                        .uid,
-                                                    lat: selectedplace
-                                                        .latLng
-                                                        .latitude,
-                                                    lng: selectedplace
-                                                        .latLng
-                                                        .longitude,
-                                                    name: selectedplace.name,
-                                                    description: '',
-                                                    tags: [],
-                                                    imageUrls: [],
-                                                  );
-                                                  PlaceService().addPlace(
-                                                    place,
-                                                  );
-                                                  Navigator.pop(context);
-                                                  setState(() {
-                                                    _previewPlace = null;
-                                                  });
-                                                  _refresh();
-                                                },
-                                                child: Text("Add to Trip"),
-                                              ),
-                                              ElevatedButton(
-                                                onPressed: () {
-                                                  // PlaceModel place = PlaceModel(
-                                                  //   id: selectedplace.fsqPlaceId,
-                                                  //   tripId: Provider.of<AppState>(
-                                                  //     context,
-                                                  //     listen: false,
-                                                  //   ).currentTrip!.id,
-                                                  //   creatorId: FirebaseAuth
-                                                  //       .instance
-                                                  //       .currentUser!
-                                                  //       .uid,
-                                                  //   lat: selectedplace
-                                                  //       .latLng
-                                                  //       .latitude,
-                                                  //   lng: selectedplace
-                                                  //       .latLng
-                                                  //       .longitude,
-                                                  //   name: selectedplace.name,
-                                                  //   description: '',
-                                                  //   tags: [],
-                                                  //   imageUrls: [],
-                                                  // );
-                                                  // PlaceService().addPlace(place);
-                                                  // Navigator.push(
-                                                  //   context,
-                                                  //   MaterialPageRoute(
-                                                  //     builder: (context) {
-                                                  //       return EditPlaceScreen(
-                                                  //         place: place,
-                                                  //       );
-                                                  //     },
-                                                  //   ),
-                                                  // );
-                                                },
-                                                child: Text('Add and modify'),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                },
-                              )
-                              .then((_) {
-                                _autocompleteController.clear();
-                                setState(() => _previewPlace = null);
-                              })
-                              .then((value) {
-                                _refresh();
-                              });
-                          ;
-                        },
-                      ),
-                    ),
-                  Padding(padding: EdgeInsets.all(3)),
-                  FloatingActionButton(
-                    heroTag: null,
-                    onPressed: () {
-                      setState(() {
-                        _searchOpen = !_searchOpen;
-                      });
-                    },
-                    child: Icon(Icons.search),
-                  ),
-                ],
-              ),
+            SearchBarWidget(
+              currentTrip: Provider.of<AppState>(
+                context,
+                listen: false,
+              ).currentTrip!,
+              onPlaceAdded: () {
+                _refresh();},
+              onPreviewPlace: (p0) {setState(() {
+                _previewPlace = p0;
+              });},
+              onMoveCamera: (p0) {_mapController.move(p0, 15);},
             ),
         ],
       ),
