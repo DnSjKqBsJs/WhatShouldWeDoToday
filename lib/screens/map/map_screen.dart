@@ -94,19 +94,12 @@ class _MapScreenState extends State<MapScreen> {
                       MaterialPageRoute(
                         builder: (context) {
                           return EditPlaceScreen(
-                            place: PlaceModel(
-                              id: '',
-                              tripId: Provider.of<AppState>(
-                                context,
-                                listen: false,
-                              ).currentTrip!.id,
-                              creatorId: FirebaseAuth.instance.currentUser!.uid,
-                              lat: point.latitude,
-                              lng: point.longitude,
-                              name: '',
-                              description: '',
-                              tags: [],
-                            ),
+                            tripId: Provider.of<AppState>(
+                              context,
+                              listen: false,
+                            ).currentTrip!.id,
+                            lat: point.latitude,
+                            lng: point.longitude,
                           );
                         },
                       ),
@@ -163,6 +156,49 @@ class _MapScreenState extends State<MapScreen> {
                                         children: [
                                           Text(place.name),
                                           Text(place.description),
+                                          Center(
+                                            child: Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                ElevatedButton(
+                                                  onPressed: () {
+                                                    Navigator.push(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                        builder: (context) {
+                                                          return EditPlaceScreen(
+                                                            place: place,
+                                                          );
+                                                        },
+                                                      ),
+                                                    ).then((_) {
+                                                      Navigator.pop(context);
+                                                      _refresh();
+                                                    });
+                                                  },
+                                                  child: Text('Update'),
+                                                ),
+                                                Padding(
+                                                  padding: EdgeInsets.only(
+                                                    right: 10,
+                                                  ),
+                                                ),
+                                                ElevatedButton(
+                                                  onPressed: () =>
+                                                      PlaceService()
+                                                          .deletePlace(place)
+                                                          .then((value) {
+                                                            Navigator.pop(
+                                                              context,
+                                                            );
+                                                            _refresh();
+                                                          }),
+                                                  child: Text('Delete'),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
                                         ],
                                       ),
                                     ),
@@ -245,56 +281,111 @@ class _MapScreenState extends State<MapScreen> {
                             _previewPlace = selectedplace;
                           });
                           showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            useSafeArea: true,
+                                context: context,
+                                isScrollControlled: true,
+                                useSafeArea: true,
 
-                            builder: (context) {
-                              return Container(
-                                padding: EdgeInsets.all(16),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(selectedplace.name),
-                                    Text(selectedplace.formattedAddress),
-                                    Text(selectedplace.categorie[0]),
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        PlaceService().addPlace(
-                                          PlaceModel(
-                                            id: selectedplace.fsqPlaceId,
-                                            tripId: Provider.of<AppState>(
-                                              context,
-                                              listen: false,
-                                            ).currentTrip!.id,
-                                            creatorId: FirebaseAuth
-                                                .instance
-                                                .currentUser!
-                                                .uid,
-                                            lat: selectedplace.latLng.latitude,
-                                            lng: selectedplace.latLng.longitude,
-                                            name: selectedplace.name,
-                                            description: '',
-                                            tags: [],
-                                            imageUrls: [],
+                                builder: (context) {
+                                  return Container(
+                                    padding: EdgeInsets.all(16),
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(selectedplace.name),
+                                        Text(selectedplace.formattedAddress),
+                                        Text(selectedplace.categorie[0]),
+                                        Center(
+                                          child: Row(
+                                            children: [
+                                              ElevatedButton(
+                                                onPressed: () {
+                                                  PlaceModel place = PlaceModel(
+                                                    id: selectedplace
+                                                        .fsqPlaceId,
+                                                    tripId:
+                                                        Provider.of<AppState>(
+                                                          context,
+                                                          listen: false,
+                                                        ).currentTrip!.id,
+                                                    creatorId: FirebaseAuth
+                                                        .instance
+                                                        .currentUser!
+                                                        .uid,
+                                                    lat: selectedplace
+                                                        .latLng
+                                                        .latitude,
+                                                    lng: selectedplace
+                                                        .latLng
+                                                        .longitude,
+                                                    name: selectedplace.name,
+                                                    description: '',
+                                                    tags: [],
+                                                    imageUrls: [],
+                                                  );
+                                                  PlaceService().addPlace(
+                                                    place,
+                                                  );
+                                                  Navigator.pop(context);
+                                                  setState(() {
+                                                    _previewPlace = null;
+                                                  });
+                                                  _refresh();
+                                                },
+                                                child: Text("Add to Trip"),
+                                              ),
+                                              ElevatedButton(
+                                                onPressed: () {
+                                                  // PlaceModel place = PlaceModel(
+                                                  //   id: selectedplace.fsqPlaceId,
+                                                  //   tripId: Provider.of<AppState>(
+                                                  //     context,
+                                                  //     listen: false,
+                                                  //   ).currentTrip!.id,
+                                                  //   creatorId: FirebaseAuth
+                                                  //       .instance
+                                                  //       .currentUser!
+                                                  //       .uid,
+                                                  //   lat: selectedplace
+                                                  //       .latLng
+                                                  //       .latitude,
+                                                  //   lng: selectedplace
+                                                  //       .latLng
+                                                  //       .longitude,
+                                                  //   name: selectedplace.name,
+                                                  //   description: '',
+                                                  //   tags: [],
+                                                  //   imageUrls: [],
+                                                  // );
+                                                  // PlaceService().addPlace(place);
+                                                  // Navigator.push(
+                                                  //   context,
+                                                  //   MaterialPageRoute(
+                                                  //     builder: (context) {
+                                                  //       return EditPlaceScreen(
+                                                  //         place: place,
+                                                  //       );
+                                                  //     },
+                                                  //   ),
+                                                  // );
+                                                },
+                                                child: Text('Add and modify'),
+                                              ),
+                                            ],
                                           ),
-                                        );
-                                        Navigator.pop(context);
-                                        setState(() {
-                                          _previewPlace = null;
-                                        });
-                                        _refresh();
-                                      },
-                                      child: Text("Add to Trip"),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                              );
-                            },
-                          ).then((_) {
-                            _autocompleteController.clear();
-                            setState(() => _previewPlace = null);
-                          });
+                                  );
+                                },
+                              )
+                              .then((_) {
+                                _autocompleteController.clear();
+                                setState(() => _previewPlace = null);
+                              })
+                              .then((value) {
+                                _refresh();
+                              });
+                          ;
                         },
                       ),
                     ),

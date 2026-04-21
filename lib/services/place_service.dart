@@ -27,4 +27,22 @@ class PlaceService {
         .get();
     return snapshot.docs.map((doc) => PlaceModel.fromMap(doc.data())).toList();
   }
+
+  Future<void> updatePlace(PlaceModel place) async {
+    await _db
+        .collection('trips')
+        .doc(place.tripId)
+        .collection('places')
+        .doc(place.id)
+        .update(place.toMap());
+  }
+
+  Future<void> deletePlace(PlaceModel place) async {
+    await _db
+        .collection('trips')
+        .doc(place.tripId)
+        .collection('places')
+        .doc(place.id)
+        .delete();
+  }
 }

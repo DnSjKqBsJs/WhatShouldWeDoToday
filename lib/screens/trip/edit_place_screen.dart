@@ -1,15 +1,27 @@
 import 'dart:io';
-
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:japan_app/constants.dart';
 import 'package:japan_app/models/place_model.dart';
+import 'package:japan_app/services/foursquare_service.dart';
+import 'package:japan_app/services/place_service.dart';
 
 class EditPlaceScreen extends StatefulWidget {
-  const EditPlaceScreen({super.key, this.place});
+  const EditPlaceScreen({
+    super.key,
+    this.place,
+    this.tripId,
+    this.lat,
+    this.lng,
+    this.foursquarePlace,
+  });
 
   final PlaceModel? place;
+  final String? tripId;
+  final double? lat;
+  final double? lng;
+  final FoursquarePlace? foursquarePlace;
 
   @override
   State<EditPlaceScreen> createState() => _EditPlaceScreenState();
@@ -30,7 +42,6 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
     description = TextEditingController();
     tags = [];
     imageUrls = [];
-    
 
     if (widget.place != null) {
       name.text = widget.place!.name;
@@ -77,16 +88,19 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
                 ],
               ),
               Padding(padding: EdgeInsets.all(5.0)),
-              ElevatedButton(onPressed: () async {
-                final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-                if(image != null)
-                {
-                  setState(() {
-                    imageUrls?.add(image.path);
-                  });
-                }
-
-              }, child: Text('Add Images')),
+              ElevatedButton(
+                onPressed: () async {
+                  final XFile? image = await _picker.pickImage(
+                    source: ImageSource.gallery,
+                  );
+                  if (image != null) {
+                    setState(() {
+                      imageUrls?.add(image.path);
+                    });
+                  }
+                },
+                child: Text('Add Images'),
+              ),
               GridView.builder(
                 itemCount: imageUrls?.length ?? 0,
                 shrinkWrap: true,
@@ -97,7 +111,9 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
                 itemBuilder: (context, index) {
                   return Stack(
                     children: [
-                      Image.file(File(imageUrls![index])),// remplacé par Image plus tard
+                      Image.file(
+                        File(imageUrls![index]),
+                      ), // remplacé par Image plus tard
                       Positioned(
                         top: 0,
                         right: 0,
@@ -110,6 +126,42 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
                     ],
                   );
                 },
+              ),
+              Padding(padding: EdgeInsets.all(20.0)),
+              ElevatedButton(
+                onPressed: () {
+                  if (widget.place != null) {
+                    PlaceService().updatePlace(
+                      PlaceModel(
+                        id: widget.place!.id,
+                        tripId: widget.place!.tripId,
+                        creatorId: widget.place!.creatorId,
+                        lat: widget.place!.lat,
+                        lng: widget.place!.lng,
+                        name: name.text,
+                        description: description.text,
+                        tags: tags,
+                        imageUrls: imageUrls,
+                        fsqPlaceId: widget.place!.fsqPlaceId ?? '',
+                      ),
+                    );
+                  } else {
+                    PlaceService().addPlace(
+                      PlaceModel(
+                        id: '',
+                        tripId: widget.tripId!,
+                        creatorId: FirebaseAuth.instance.currentUser!.uid,
+                        lat: widget.lat!,
+                        lng: widget.lng!,
+                        name: name.text,
+                        description: description.text,
+                        tags: tags,
+                      ),
+                    );
+                  }
+                  Navigator.pop(context);
+                },
+                child: Text('Save'),
               ),
             ],
           ),
