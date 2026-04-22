@@ -54,6 +54,12 @@ class _MapScreenState extends State<MapScreen> {
         currentTrip = trip.id;
       }
     }
+    if(Provider.of<AppState>(context).mapNeedsRefresh)
+    {
+      print('mapNeedsRefresh détecté !');
+      _refresh();
+      Provider.of<AppState>(context, listen: false).mapRefreshDone();
+    }
   }
 
   void _refresh() {
@@ -76,6 +82,7 @@ class _MapScreenState extends State<MapScreen> {
           FutureBuilder<List<PlaceModel>>(
             future: _future,
             builder: (context, asyncSnapshot) {
+              print('FutureBuilder rebuild: ${asyncSnapshot.data?.length} places');
               final places = asyncSnapshot.data ?? [];
               return FlutterMap(
                 mapController: _mapController,

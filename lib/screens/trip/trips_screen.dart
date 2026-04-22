@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:japan_app/models/trip_model.dart';
 import 'package:japan_app/screens/trip/create_trip_screen.dart';
+import 'package:japan_app/screens/trip/day_screen.dart';
 import 'package:japan_app/screens/trip/invite_user_screen.dart';
 import 'package:japan_app/services/app_state.dart';
 import 'package:japan_app/services/firestore_service.dart';
@@ -73,6 +74,20 @@ class _TripsScreenState extends State<TripsScreen> {
                           widget.onTripSelected();
                         },
                         child: Text('Select'),
+                      ),
+                      Padding(padding: EdgeInsets.only(right:10)),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DayScreen(
+                                tripId: trips[index].id,
+                              ),
+                            ),
+                          );
+                        },
+                        child: Text('OpenDays'),
                       ),
                       PopupMenuButton(
                         icon: Icon(Icons.more_vert),

@@ -4,6 +4,7 @@ import 'package:japan_app/models/place_model.dart';
 import 'package:japan_app/screens/trip/edit_place_screen.dart';
 import 'package:japan_app/services/day_service.dart';
 import 'package:japan_app/services/place_service.dart';
+import 'package:japan_app/widgets/alert_dialog_widget.dart';
 
 class PlaceBottomSheet extends StatefulWidget {
   const PlaceBottomSheet({
@@ -39,17 +40,22 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
     if (widget.place.days != null) {
       days = widget.place.days!;
     }
+
+    
   }
 
   void _refresh() async {
     final result = await DayService().getDays(widget.tripId);
     setState(() {
       _allDays = result;
+      print('allDays chargés: $_allDays');
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    print('days local: $days');
+    print('widget.place.days: ${widget.place.days}');
     return Container(
       padding: EdgeInsets.all(16),
       child: Column(
@@ -59,6 +65,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
           Text(widget.place.description),
           Padding(padding: EdgeInsets.all(10)),
           Text('Days'),
+
           if (!_isEditing) ...[
             ElevatedButton(
               onPressed: () => setState(() {
@@ -66,10 +73,10 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
               }),
               child: Text('Edit'),
             ),
-            if (widget.place.days == null || widget.place.days!.isEmpty) ...[
+            if (days.isEmpty) ...[
               Text('No days assigned or days created'),
             ] else
-              ...widget.place.days!
+              ...days
                   .map(
                     (day) => Container(
                       color: Colors.green,
@@ -116,8 +123,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                             } else {
                               days.add(e.id);
                             }
-                            setState(() {
-                            });
+                            setState(() {});
                           },
                         ),
                       ),
@@ -139,36 +145,21 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
               ),
             ],
             ElevatedButton(
-                onPressed: () => showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    title: Text('New Day'),
-                    content: SingleChildScrollView(
-                      child: Column(
-                        children: [
-                          Text('New Day Name'),
-                          TextField(controller: dayName),
-                          ElevatedButton(
-                            onPressed: () {
-                              DayService().createDay(
-                                DayModel(
-                                  id: '',
-                                  tripId: widget.tripId,
-                                  name: dayName.text,
-                                ),
-                              );
-                              setState(() {_refresh();});
-                              Navigator.pop(context);
-                            },
-                            child: Text('Add'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+              onPressed: () => showDialog(
+                context: context,
+                builder: (context) => AlertDialogWidget(
+                  tripId: widget.tripId,
+                  refresh: () {
+                    setState(() {
+                      _refresh();
+                    });
+                    Navigator.pop(context);
+                  },
                 ),
-                child: Text('Create Day'),
-              ),],
+              ),
+              child: Text('Create Day'),
+            ),
+          ],
           Center(
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
