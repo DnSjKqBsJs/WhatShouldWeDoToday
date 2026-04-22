@@ -10,7 +10,7 @@ class PlaceModel {
   List<String>? imageUrls;
   String? category;
   final List<String> tags;
-  String? day;
+  List<String>? days;
 
   PlaceModel({
     required this.id,
@@ -24,7 +24,7 @@ class PlaceModel {
     this.imageUrls,
     this.category,
     required this.tags,
-    this.day,
+    this.days,
   });
 
   Map<String, dynamic> toMap() {
@@ -40,7 +40,7 @@ class PlaceModel {
       'imageUrls': imageUrls,
       'category': category,
       'tags': tags,
-      'day': day,
+      'days': days,
     };
   }
 
@@ -59,7 +59,7 @@ class PlaceModel {
           : null,
       category: map['category'],
       tags: List<String>.from(map['tags']),
-      day: map['day'],
+      days: map['days'] != null ? List<String>.from(map['days']) : null,
     );
   }
 }

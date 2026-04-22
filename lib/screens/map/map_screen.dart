@@ -126,6 +126,7 @@ class _MapScreenState extends State<MapScreen> {
                                   Navigator.pop(context);
                                   _refresh();
                                 },
+                                tripId: Provider.of<AppState>(context, listen: false).currentTrip!.id,
                               ),
                             ),
                           )
