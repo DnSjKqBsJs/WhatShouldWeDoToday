@@ -45,6 +45,10 @@ class _MapScreenState extends State<MapScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final trip = Provider.of<AppState>(context).currentTrip;
+    if (trip == null && currentTrip != null) {
+      currentTrip = null;
+      _refresh();
+    }
     if (trip != null) {
       if (currentTrip != trip.id) {
         _refresh();
@@ -54,9 +58,7 @@ class _MapScreenState extends State<MapScreen> {
         currentTrip = trip.id;
       }
     }
-    if(Provider.of<AppState>(context).mapNeedsRefresh)
-    {
-      print('mapNeedsRefresh détecté !');
+    if (Provider.of<AppState>(context).mapNeedsRefresh) {
       _refresh();
       Provider.of<AppState>(context, listen: false).mapRefreshDone();
     }
@@ -82,7 +84,15 @@ class _MapScreenState extends State<MapScreen> {
           FutureBuilder<List<PlaceModel>>(
             future: _future,
             builder: (context, asyncSnapshot) {
-              print('FutureBuilder rebuild: ${asyncSnapshot.data?.length} places');
+              final currentTripSelected = Provider.of<AppState>(
+                context,
+                listen: false,
+              ).currentTrip;
+              if (currentTripSelected == null) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  _mapController.move(LatLng(46.0, 2.0), 3);
+                });
+              } // carte vide sans marqueurs
               final places = asyncSnapshot.data ?? [];
               return FlutterMap(
                 mapController: _mapController,
@@ -93,10 +103,7 @@ class _MapScreenState extends State<MapScreen> {
                       MaterialPageRoute(
                         builder: (context) {
                           return EditPlaceScreen(
-                            tripId: Provider.of<AppState>(
-                              context,
-                              listen: false,
-                            ).currentTrip!.id,
+                            tripId: currentTripSelected?.id ?? '',
                             lat: point.latitude,
                             lng: point.longitude,
                           );
@@ -133,7 +140,7 @@ class _MapScreenState extends State<MapScreen> {
                                   Navigator.pop(context);
                                   _refresh();
                                 },
-                                tripId: Provider.of<AppState>(context, listen: false).currentTrip!.id,
+                                tripId: currentTripSelected?.id ?? '',
                               ),
                             ),
                           )
@@ -165,11 +172,16 @@ class _MapScreenState extends State<MapScreen> {
                 listen: false,
               ).currentTrip!,
               onPlaceAdded: () {
-                _refresh();},
-              onPreviewPlace: (p0) {setState(() {
-                _previewPlace = p0;
-              });},
-              onMoveCamera: (p0) {_mapController.move(p0, 15);},
+                _refresh();
+              },
+              onPreviewPlace: (p0) {
+                setState(() {
+                  _previewPlace = p0;
+                });
+              },
+              onMoveCamera: (p0) {
+                _mapController.move(p0, 15);
+              },
             ),
         ],
       ),

@@ -70,12 +70,13 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                     centerLat: _selectedCountry.lat,
                     centerLng: _selectedCountry.lng,
                     users: [FirebaseAuth.instance.currentUser!.uid],
+                    order: 0,
                   ),
                 );
-                Provider.of<AppState>(
-                  context,
-                  listen: false,
-                ).setCurrentTrip(tripModel);
+                // Provider.of<AppState>(
+                //   context,
+                //   listen: false,
+                // ).setCurrentTrip(tripModel); Met direct le trip crée en current trip
                 Navigator.pop(
                   context,
                   MaterialPageRoute(

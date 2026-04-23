@@ -19,6 +19,7 @@ class TripsScreen extends StatefulWidget {
 
 class _TripsScreenState extends State<TripsScreen> {
   late Future<List<TripModel>> _future;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -75,15 +76,14 @@ class _TripsScreenState extends State<TripsScreen> {
                         },
                         child: Text('Select'),
                       ),
-                      Padding(padding: EdgeInsets.only(right:10)),
+                      Padding(padding: EdgeInsets.only(right: 10)),
                       ElevatedButton(
                         onPressed: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => DayScreen(
-                                tripId: trips[index].id,
-                              ),
+                              builder: (context) =>
+                                  DayScreen(tripId: trips[index].id),
                             ),
                           );
                         },
@@ -112,7 +112,24 @@ class _TripsScreenState extends State<TripsScreen> {
                             );
                           }
                           if (value == 'delete') {
-                            // on fera la suppression après
+                            FirestoreService()
+                                .deleteUser(
+                                  FirebaseAuth.instance.currentUser!.uid,
+                                  trips[index].id,
+                                )
+                                .then((value) {
+                                  if (trips[index].id ==
+                                      Provider.of<AppState>(
+                                        context,
+                                        listen: false,
+                                      ).currentTrip?.id) {
+                                    Provider.of<AppState>(
+                                      context,
+                                      listen: false
+                                    ).resetCurrentTrip();
+                                  }
+                                  _refresh();
+                                });
                           }
                         },
                       ),

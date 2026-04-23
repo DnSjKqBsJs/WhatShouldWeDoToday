@@ -7,6 +7,9 @@ class DayService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   Future<void> createDay(DayModel day) async {
+    final existing = await getDays(day.tripId);
+    final order = existing.length;
+
     final id = _db
         .collection('trips')
         .doc(day.tripId)
@@ -14,12 +17,18 @@ class DayService {
         .doc()
         .id;
 
+    final updatedDay = DayModel(
+      id: id,
+      tripId: day.tripId,
+      name: day.name,
+      order: order,
+    );
     await _db
         .collection('trips')
         .doc(day.tripId)
         .collection('days')
         .doc(id)
-        .set({...day.toMap(), 'id': id});
+        .set(updatedDay.toMap());
   }
 
   Future<List<DayModel>> getDays(String tripId) async {
@@ -27,6 +36,7 @@ class DayService {
         .collection('trips')
         .doc(tripId)
         .collection('days')
+        .orderBy('order')
         .get();
     // print('tripId: $tripId');
     // print('nombre de docs: ${snapshot.docs.length}');

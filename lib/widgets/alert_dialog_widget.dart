@@ -25,17 +25,18 @@ class AlertDialogWidget extends StatelessWidget {
             Text('New Day Name'),
             TextField(controller: dayNameController),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 if (day != null) {
-                  DayService().modifyDay(day!, dayNameController.text);
+                  await DayService().modifyDay(day!, dayNameController.text);
                 }
                 else
                 {
-                  DayService().createDay(
+                  await DayService().createDay(
                     DayModel(
                       id: '',
                       tripId: tripId,
                       name: dayNameController.text,
+                      order: 0
                     ),
                   );
                 }

@@ -48,14 +48,11 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
     final result = await DayService().getDays(widget.tripId);
     setState(() {
       _allDays = result;
-      print('allDays chargés: $_allDays');
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    print('days local: $days');
-    print('widget.place.days: ${widget.place.days}');
     return Container(
       padding: EdgeInsets.all(16),
       child: Column(
@@ -91,6 +88,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                                       id: '',
                                       tripId: '',
                                       name: '...',
+                                      order: 0
                                     ),
                                   )
                                   .name,
@@ -150,9 +148,9 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                 builder: (context) => AlertDialogWidget(
                   tripId: widget.tripId,
                   refresh: () {
-                    setState(() {
-                      _refresh();
-                    });
+                    _refresh();
+                    // setState(() {
+                    // });
                     Navigator.pop(context);
                   },
                 ),

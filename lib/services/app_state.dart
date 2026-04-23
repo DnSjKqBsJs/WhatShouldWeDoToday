@@ -10,6 +10,12 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  void resetCurrentTrip()
+  {
+    currentTrip = null;
+    notifyListeners();
+  }
+
   void requestMapRefresh() {
     mapNeedsRefresh = true;
     notifyListeners();

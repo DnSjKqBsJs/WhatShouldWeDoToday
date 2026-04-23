@@ -16,6 +16,7 @@ class DayScreen extends StatefulWidget {
 
 class _DayScreenState extends State<DayScreen> {
   late Future<List<DayModel>> _future;
+  List<DayModel> _days = [];
 
   @override
   void initState() {
@@ -44,22 +45,37 @@ class _DayScreenState extends State<DayScreen> {
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return Text("Aucun jour pour l'instant"); // liste vide
           }
-          final days = snapshot.data!;
-          return ListView.builder(
-            itemCount: days.length,
+          _days = snapshot.data!;
+          if (_days.isEmpty && snapshot.hasData) {
+            _days = snapshot.data!;
+          }
+          return ReorderableListView.builder(
+            onReorder: (oldIndex, newIndex) {
+              setState(() {
+                if(newIndex>oldIndex) newIndex--;
+                final item = _days.removeAt(oldIndex);
+                _days.insert(newIndex, item);
+
+                for(int i = 0; i < _days.length; i++)
+                {
+                  
+                }
+              });
+            },
+            itemCount: _days.length,
             itemBuilder: (context, index) {
               return Card(
                 child: Padding(
                   padding: EdgeInsets.all(12.0),
                   child: Row(
                     children: [
-                      Expanded(child: Text(days[index].name)),
+                      Expanded(child: Text(_days[index].name)),
                       ElevatedButton(
                         onPressed: () {
                           showDialog(
                             context: context,
                             builder: (context) => AlertDialogWidget(
-                              day: days[index],
+                              day: _days[index],
                               tripId: widget.tripId,
                               refresh: () {
                                 setState(() {
@@ -75,9 +91,12 @@ class _DayScreenState extends State<DayScreen> {
                       Padding(padding: EdgeInsets.only(right: 10)),
                       ElevatedButton(
                         onPressed: () async {
-                          await DayService().deleteDay(days[index]);
+                          await DayService().deleteDay(_days[index]);
                           _refresh();
-                          Provider.of<AppState>(context, listen: false).requestMapRefresh();
+                          Provider.of<AppState>(
+                            context,
+                            listen: false,
+                          ).requestMapRefresh();
                         },
                         child: Text('Delete'),
                       ),
