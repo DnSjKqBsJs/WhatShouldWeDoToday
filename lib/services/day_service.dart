@@ -54,13 +54,13 @@ class DayService {
     await removeDayFromPlaces(day.tripId, day.id);
   }
 
-  Future<void> modifyDay(DayModel day, String newName) async {
+  Future<void> modifyDay(DayModel day) async {
     await _db
         .collection('trips')
         .doc(day.tripId)
         .collection('days')
         .doc(day.id)
-        .set({...day.toMap(), 'name': newName});
+        .set(day.toMap());
   }
 
   Future<void> removeDayFromPlaces(String tripId, String dayId) async {

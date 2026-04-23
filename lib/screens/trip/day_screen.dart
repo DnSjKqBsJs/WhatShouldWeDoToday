@@ -52,19 +52,31 @@ class _DayScreenState extends State<DayScreen> {
           return ReorderableListView.builder(
             onReorder: (oldIndex, newIndex) {
               setState(() {
-                if(newIndex>oldIndex) newIndex--;
+                if (newIndex > oldIndex) newIndex--;
                 final item = _days.removeAt(oldIndex);
                 _days.insert(newIndex, item);
 
-                for(int i = 0; i < _days.length; i++)
-                {
-                  
+                for (int i = 0; i < _days.length; i++) {
+                  DayService()
+                      .modifyDay(
+                        DayModel(
+                          id: _days[i].id,
+                          tripId: _days[i].tripId,
+                          name: _days[i].name,
+                          order: i,
+                        ),
+                      )
+                      .catchError((e) {
+                        // en cas d'erreur, on recharge depuis Firestore
+                        _refresh();
+                      });
                 }
               });
             },
             itemCount: _days.length,
             itemBuilder: (context, index) {
               return Card(
+                key: ValueKey(_days[index].id),
                 child: Padding(
                   padding: EdgeInsets.all(12.0),
                   child: Row(

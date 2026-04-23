@@ -20,6 +20,7 @@ class TripsScreen extends StatefulWidget {
 class _TripsScreenState extends State<TripsScreen> {
   late Future<List<TripModel>> _future;
   bool _isLoading = false;
+  List<TripModel> _trips = [];
 
   @override
   void initState() {
@@ -48,11 +49,39 @@ class _TripsScreenState extends State<TripsScreen> {
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return Text('Aucun trip pour l instant'); // liste vide
           }
-          final trips = snapshot.data!;
-          return ListView.builder(
-            itemCount: trips.length,
+          _trips = snapshot.data!;
+          if (_trips.isEmpty && snapshot.hasData) {
+            _trips = snapshot.data!;
+          }
+          return ReorderableListView.builder(
+            onReorder: (oldIndex, newIndex) {
+              setState(() {
+                if (newIndex > oldIndex) newIndex--;
+                final item = _trips.removeAt(oldIndex);
+                _trips.insert(newIndex, item);
+
+                for (int i = 0; i < _trips.length; i++) {
+                  FirestoreService().updateTrip(
+                    TripModel(
+                      id: _trips[i].id,
+                      name: _trips[i].name,
+                      countryName: _trips[i].countryName,
+                      centerLat: _trips[i].centerLat,
+                      centerLng: _trips[i].centerLng,
+                      users: _trips[i].users,
+                      order: i,
+                    ),
+                    _trips[i].id,
+                  ).catchError((e) {
+                    _refresh();
+                  });
+                }
+              });
+            },
+            itemCount: _trips.length,
             itemBuilder: (context, index) {
               return Card(
+                key: ValueKey(_trips[index].id),
                 child: Padding(
                   padding: EdgeInsets.all(12.0),
                   child: Row(
@@ -61,8 +90,8 @@ class _TripsScreenState extends State<TripsScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(trips[index].name),
-                            Text(trips[index].countryName),
+                            Text(_trips[index].name),
+                            Text(_trips[index].countryName),
                           ],
                         ),
                       ),
@@ -71,7 +100,7 @@ class _TripsScreenState extends State<TripsScreen> {
                           Provider.of<AppState>(
                             context,
                             listen: false,
-                          ).setCurrentTrip(trips[index]);
+                          ).setCurrentTrip(_trips[index]);
                           widget.onTripSelected();
                         },
                         child: Text('Select'),
@@ -83,7 +112,7 @@ class _TripsScreenState extends State<TripsScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
-                                  DayScreen(tripId: trips[index].id),
+                                  DayScreen(tripId: _trips[index].id),
                             ),
                           );
                         },
@@ -107,7 +136,7 @@ class _TripsScreenState extends State<TripsScreen> {
                               context,
                               MaterialPageRoute(
                                 builder: (context) =>
-                                    InviteUserScreen(tripId: trips[index].id),
+                                    InviteUserScreen(tripId: _trips[index].id),
                               ),
                             );
                           }
@@ -115,17 +144,17 @@ class _TripsScreenState extends State<TripsScreen> {
                             FirestoreService()
                                 .deleteUser(
                                   FirebaseAuth.instance.currentUser!.uid,
-                                  trips[index].id,
+                                  _trips[index].id,
                                 )
                                 .then((value) {
-                                  if (trips[index].id ==
+                                  if (_trips[index].id ==
                                       Provider.of<AppState>(
                                         context,
                                         listen: false,
                                       ).currentTrip?.id) {
                                     Provider.of<AppState>(
                                       context,
-                                      listen: false
+                                      listen: false,
                                     ).resetCurrentTrip();
                                   }
                                   _refresh();

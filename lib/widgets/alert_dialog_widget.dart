@@ -27,16 +27,21 @@ class AlertDialogWidget extends StatelessWidget {
             ElevatedButton(
               onPressed: () async {
                 if (day != null) {
-                  await DayService().modifyDay(day!, dayNameController.text);
-                }
-                else
-                {
+                  await DayService().modifyDay(
+                    DayModel(
+                      id: day!.id,
+                      tripId: day!.tripId,
+                      name: dayNameController.text,
+                      order: day!.order,
+                    ),
+                  );
+                } else {
                   await DayService().createDay(
                     DayModel(
                       id: '',
                       tripId: tripId,
                       name: dayNameController.text,
-                      order: 0
+                      order: 0,
                     ),
                   );
                 }
