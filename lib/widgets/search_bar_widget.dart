@@ -10,7 +10,7 @@ class SearchBarWidget extends StatefulWidget {
     required this.currentTrip,
     required this.onPlaceAdded,
     required this.onPreviewPlace,
-    required this.onMoveCamera
+    required this.onMoveCamera,
   });
 
   final TripModel currentTrip;
@@ -25,7 +25,6 @@ class SearchBarWidget extends StatefulWidget {
 class _SearchBarStateWidget extends State<SearchBarWidget> {
   bool _searchOpen = false;
   late TextEditingController _autocompleteController;
-  final search = TextEditingController();
   FoursquarePlace selectedPlace = FoursquarePlace(
     fsqPlaceId: '',
     name: '',
@@ -34,35 +33,79 @@ class _SearchBarStateWidget extends State<SearchBarWidget> {
     formattedAddress: '',
   );
 
+  Widget _buildButton({
+    required IconData icon,
+    required VoidCallback onTap,
+    bool active = false,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          color: active ? Colors.black87 : Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Icon(
+          icon,
+          size: 20,
+          color: active ? Colors.white : Colors.black87,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      top: 5,
-      left: 3,
-      right: 3,
+      top: 50,
+      right: 12,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          FloatingActionButton(
-            heroTag: null,
-            onPressed: () {},
-            child: Icon(Icons.add),
-          ),
-          Padding(padding: EdgeInsets.all(3)),
           if (_searchOpen)
-            Expanded(
+            Container(
+              width: 220,
+              height: 44,
+              margin: EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.15),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
               child: Autocomplete<FoursquarePlace>(
-                fieldViewBuilder:
-                    (context, controller, focusNode, onSubmitted) {
-                      _autocompleteController = controller;
-                      return TextField(
-                        controller: controller,
-                        focusNode: focusNode,
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(),
-                        ),
-                      );
-                    },
+                fieldViewBuilder: (context, controller, focusNode, onSubmitted) {
+                  _autocompleteController = controller;
+                  return TextField(
+                    controller: controller,
+                    focusNode: focusNode,
+                    style: TextStyle(fontSize: 14),
+                    decoration: InputDecoration(
+                      hintText: 'Rechercher un lieu...',
+                      hintStyle: TextStyle(fontSize: 13, color: Colors.black38),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 12,
+                      ),
+                    ),
+                  );
+                },
                 optionsBuilder: (search) {
                   if (search.text == '') {
                     return const Iterable<FoursquarePlace>.empty();
@@ -99,15 +142,10 @@ class _SearchBarStateWidget extends State<SearchBarWidget> {
                 },
               ),
             ),
-          Padding(padding: EdgeInsets.all(3)),
-          FloatingActionButton(
-            heroTag: null,
-            onPressed: () {
-              setState(() {
-                _searchOpen = !_searchOpen;
-              });
-            },
-            child: Icon(Icons.search),
+          _buildButton(
+            icon: Icons.search,
+            active: _searchOpen,
+            onTap: () => setState(() => _searchOpen = !_searchOpen),
           ),
         ],
       ),

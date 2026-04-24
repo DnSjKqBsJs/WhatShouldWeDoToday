@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
+import 'package:japan_app/models/day_model.dart';
 import 'package:japan_app/models/place_model.dart';
 import 'package:japan_app/screens/trip/edit_place_screen.dart';
 import 'package:japan_app/services/app_state.dart';
+import 'package:japan_app/services/day_service.dart';
 import 'package:japan_app/services/foursquare_service.dart';
 import 'package:japan_app/services/place_service.dart';
 import 'package:japan_app/widgets/cluster_marker.dart';
+import 'package:japan_app/widgets/filter_panel.dart';
 import 'package:japan_app/widgets/place_marker.dart';
 import 'package:japan_app/widgets/search_bar_widget.dart';
 import 'package:latlong2/latlong.dart';
@@ -25,6 +28,9 @@ class _MapScreenState extends State<MapScreen> {
   String? currentTrip = '';
   final search = TextEditingController();
   FoursquarePlace? _previewPlace;
+  List<String> _selectedDays = [];
+  List<String> _selectedTags = [];
+  List<DayModel> _allDays = [];
 
   void moveCam() {
     final trip = Provider.of<AppState>(context, listen: false).currentTrip;
@@ -50,6 +56,7 @@ class _MapScreenState extends State<MapScreen> {
       _refresh();
     }
     if (trip != null) {
+      getAllDays(trip.id);
       if (currentTrip != trip.id) {
         _refresh();
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -64,6 +71,10 @@ class _MapScreenState extends State<MapScreen> {
     }
   }
 
+  void getAllDays(String tripId) async {
+    _allDays = await DayService().getDays(tripId);
+  }
+
   void _refresh() {
     final tripId = Provider.of<AppState>(
       context,
@@ -74,6 +85,19 @@ class _MapScreenState extends State<MapScreen> {
           ? PlaceService().getPlaces(tripId)
           : Future.value([]);
     });
+  }
+
+  List<PlaceModel> _filterPlaces(List<PlaceModel> places) {
+    if (_selectedDays.isEmpty && _selectedTags.isEmpty) return places;
+    return places.where((place) {
+      final dayMatch =
+          _selectedDays.isEmpty ||
+          (place.days?.any((day) => _selectedDays.contains(day)) ?? false);
+      final tagMatch =
+          _selectedTags.isEmpty ||
+          place.tags.any((tag) => _selectedTags.contains(tag));
+      return dayMatch && tagMatch;
+    }).toList();
   }
 
   @override
@@ -93,7 +117,7 @@ class _MapScreenState extends State<MapScreen> {
                   _mapController.move(LatLng(46.0, 2.0), 3);
                 });
               } // carte vide sans marqueurs
-              final places = asyncSnapshot.data ?? [];
+              final places = _filterPlaces(asyncSnapshot.data ?? []);
               return FlutterMap(
                 mapController: _mapController,
                 options: MapOptions(
@@ -183,6 +207,21 @@ class _MapScreenState extends State<MapScreen> {
                 _mapController.move(p0, 15);
               },
             ),
+          FilterPanel(
+            days: _allDays,
+            selectedDaysIds: _selectedDays,
+            selectedTags: _selectedTags,
+            onDayToggled: (p0) {
+              setState(() {
+              });
+              _refresh();
+            },
+            onTagToggled: (p0) {
+              setState(() {
+              });
+              _refresh();
+            },
+          ),
         ],
       ),
     );

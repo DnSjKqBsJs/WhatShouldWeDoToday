@@ -40,8 +40,6 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
     if (widget.place.days != null) {
       days = widget.place.days!;
     }
-
-    
   }
 
   void _refresh() async {
@@ -88,7 +86,7 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                                       id: '',
                                       tripId: '',
                                       name: '...',
-                                      order: 0
+                                      order: 0,
                                     ),
                                   )
                                   .name,
@@ -172,7 +170,6 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
                         },
                       ),
                     ).then((_) {
-                      Navigator.pop(context);
                       widget.onRefresh.call();
                     });
                   },
