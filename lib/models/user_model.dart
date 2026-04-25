@@ -4,6 +4,7 @@ class UserModel {
   final String firstName;
   final String lastName;
   final String photoUrl;
+  List<String>? friends;
 
   UserModel({
     required this.id,
@@ -11,6 +12,8 @@ class UserModel {
     required this.firstName,
     required this.lastName,
     required this.photoUrl,
+    this.friends
+
   });
 
   Map<String, dynamic> toMap() {
@@ -20,6 +23,7 @@ class UserModel {
       'firstName': firstName,
       'lastName': lastName,
       'photoUrl': photoUrl,
+      'friends' : friends
     };
   }
 
@@ -30,6 +34,7 @@ class UserModel {
       firstName: map['firstName'],
       lastName: map['lastName'],
       photoUrl: map['photoUrl'],
+      friends: map['friends'] ?? [],
     );
   }
 }

@@ -35,6 +35,7 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
   late List<String> tags;
   late List<String>? imageUrls;
   final ImagePicker _picker = ImagePicker();
+  final List<String> _deletedUrls = [];
 
   @override
   void initState() {
@@ -127,8 +128,16 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
                         right: 0,
                         child: IconButton(
                           icon: Icon(Icons.close),
-                          onPressed: () =>
-                              setState(() => imageUrls!.removeAt(index)),
+                          onPressed:() {
+                              setState(() {
+                                if(imageUrls![index].startsWith('http'))
+                                {
+                                  _deletedUrls.add(imageUrls![index]);
+
+                                  imageUrls!.removeAt(index);
+                                }
+                              });
+                          },
                         ),
                       ),
                     ],
@@ -152,6 +161,10 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
                         final url = await ref.getDownloadURL();
                         urls.add(url);
                       }
+                    }
+                    for(final e in _deletedUrls)
+                    {
+                      await FirebaseStorage.instance.refFromURL(e).delete();
                     }
                     PlaceService().updatePlace(
                       PlaceModel(

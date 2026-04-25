@@ -21,6 +21,7 @@ class DayModel {
       tripId: map['tripId'],
       name: map['name'],
       order: map['order'],
+      
     );
   }
 }
