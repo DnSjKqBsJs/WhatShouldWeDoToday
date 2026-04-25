@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:japan_app/models/day_model.dart';
 import 'package:japan_app/models/place_model.dart';
@@ -59,6 +62,29 @@ class _PlaceBottomSheetState extends State<PlaceBottomSheet> {
           Text(widget.place.name),
           Text(widget.place.description),
           Padding(padding: EdgeInsets.all(10)),
+          GridView.builder(
+            itemCount: widget.place.imageUrls?.length ?? 0,
+            shrinkWrap: true,
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+            ),
+            itemBuilder: (context, index) {
+              return Stack(
+                children: [
+                  widget.place.imageUrls![index].startsWith('http')
+                      ? CachedNetworkImage(
+                          imageUrl: widget.place.imageUrls![index],
+                          placeholder: (context, url) =>
+                              Container(color: Colors.grey.shade200),
+                          errorWidget: (context, url, error) =>
+                              Icon(Icons.broken_image),
+                        )
+                      : Image.file(File(widget.place.imageUrls![index])),
+                ],
+              );
+            },
+          ),
+          SizedBox(height: 10),
           Text('Days'),
 
           if (!_isEditing) ...[

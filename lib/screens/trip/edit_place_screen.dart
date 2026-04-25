@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:japan_app/constants.dart';
@@ -111,9 +113,15 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
                 itemBuilder: (context, index) {
                   return Stack(
                     children: [
-                      Image.file(
-                        File(imageUrls![index]),
-                      ), // remplacé par Image plus tard
+                      imageUrls![index].startsWith('http')
+                          ? CachedNetworkImage(
+                              imageUrl: imageUrls![index],
+                              placeholder: (context, url) =>
+                                  Container(color: Colors.grey.shade200),
+                              errorWidget: (context, url, error) =>
+                                  Icon(Icons.broken_image),
+                            )
+                          : Image.file(File(imageUrls![index])),
                       Positioned(
                         top: 0,
                         right: 0,
@@ -129,8 +137,22 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
               ),
               Padding(padding: EdgeInsets.all(20.0)),
               ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
+                  List<String> urls = [];
                   if (widget.place != null) {
+                    for (final element in imageUrls!) {
+                      if (element.startsWith('http')) {
+                        urls.add(element);
+                      } else {
+                        final timestamp = DateTime.now().millisecondsSinceEpoch;
+                        final ref = FirebaseStorage.instance.ref().child(
+                          'places/${widget.place!.tripId}/${widget.place!.id}/$timestamp.jpg',
+                        );
+                        await ref.putFile(File(element));
+                        final url = await ref.getDownloadURL();
+                        urls.add(url);
+                      }
+                    }
                     PlaceService().updatePlace(
                       PlaceModel(
                         id: widget.place!.id,
@@ -141,7 +163,7 @@ class _EditPlaceScreenState extends State<EditPlaceScreen> {
                         name: name.text,
                         description: description.text,
                         tags: tags,
-                        imageUrls: imageUrls,
+                        imageUrls: urls,
                         fsqPlaceId: widget.place!.fsqPlaceId ?? '',
                       ),
                     );

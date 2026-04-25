@@ -28,8 +28,8 @@ class _MapScreenState extends State<MapScreen> {
   String? currentTrip = '';
   final search = TextEditingController();
   FoursquarePlace? _previewPlace;
-  List<String> _selectedDays = [];
-  List<String> _selectedTags = [];
+  final List<String> _selectedDays = [];
+  final List<String> _selectedTags = [];
   List<DayModel> _allDays = [];
 
   void moveCam() {

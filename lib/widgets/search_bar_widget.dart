@@ -89,23 +89,27 @@ class _SearchBarStateWidget extends State<SearchBarWidget> {
                 ],
               ),
               child: Autocomplete<FoursquarePlace>(
-                fieldViewBuilder: (context, controller, focusNode, onSubmitted) {
-                  _autocompleteController = controller;
-                  return TextField(
-                    controller: controller,
-                    focusNode: focusNode,
-                    style: TextStyle(fontSize: 14),
-                    decoration: InputDecoration(
-                      hintText: 'Rechercher un lieu...',
-                      hintStyle: TextStyle(fontSize: 13, color: Colors.black38),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 12,
-                      ),
-                    ),
-                  );
-                },
+                fieldViewBuilder:
+                    (context, controller, focusNode, onSubmitted) {
+                      _autocompleteController = controller;
+                      return TextField(
+                        controller: controller,
+                        focusNode: focusNode,
+                        style: TextStyle(fontSize: 14),
+                        decoration: InputDecoration(
+                          hintText: 'Rechercher un lieu...',
+                          hintStyle: TextStyle(
+                            fontSize: 13,
+                            color: Colors.black38,
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 12,
+                          ),
+                        ),
+                      );
+                    },
                 optionsBuilder: (search) {
                   if (search.text == '') {
                     return const Iterable<FoursquarePlace>.empty();
@@ -131,13 +135,13 @@ class _SearchBarStateWidget extends State<SearchBarWidget> {
                         tripId: widget.currentTrip.id,
                         onAddTrip: () {
                           Navigator.pop(context);
-                          widget.onPlaceAdded.call();
                         },
                       );
                     },
                   ).then((_) {
                     _autocompleteController.clear();
                     widget.onPreviewPlace.call(null);
+                    widget.onPlaceAdded.call();
                   });
                 },
               ),

@@ -80,7 +80,7 @@ class FirestoreService {
 
   Future<UserModel> createUser(String email) async {
     final uid = FirebaseAuth.instance.currentUser!.uid;
-    final user = UserModel(id: uid, email: email, name: email.split('@')[0]);
+    final user = UserModel(id: uid, email: email, firstName: email.split('@')[0], lastName: '', photoUrl: '');
     await _db.collection('users').doc(uid).set(user.toMap());
     return user;
   }
@@ -98,5 +98,16 @@ class FirestoreService {
     await _db.collection('trips').doc(tripId).update({
       'users': FieldValue.arrayUnion([user.id]),
     });
+  }
+
+  Future<UserModel?> getUser(String uid) async {
+  final doc = await _db.collection('users').doc(uid).get();
+  if (!doc.exists) return null;
+  return UserModel.fromMap(doc.data()!);
+}
+
+  Future<void> updateUser(UserModel user) async
+  {
+    await _db.collection('users').doc(user.id).update(user.toMap());
   }
 }
