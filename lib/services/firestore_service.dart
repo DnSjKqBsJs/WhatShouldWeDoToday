@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:japan_app/models/trip_model.dart';
 import 'package:japan_app/models/user_model.dart';
 
@@ -104,7 +105,18 @@ class FirestoreService {
   final doc = await _db.collection('users').doc(uid).get();
   if (!doc.exists) return null;
   return UserModel.fromMap(doc.data()!);
-}
+  }
+
+  Future<List<UserModel>> getUsers(List<String> friendsId) async
+  {
+    List<UserModel> friends = [];
+    for(final element in friendsId)
+    {
+      final snapshot = await _db.collection('users').where('id', isEqualTo: element).get();
+      friends.add(UserModel.fromMap(snapshot.docs.first.data()));
+    }
+    return friends;
+  }
 
   Future<void> updateUser(UserModel user) async
   {
