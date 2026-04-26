@@ -5,8 +5,10 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:japan_app/models/user_model.dart';
+import 'package:japan_app/services/app_state.dart';
 import 'package:japan_app/services/auth_service.dart';
 import 'package:japan_app/services/firestore_service.dart';
+import 'package:provider/provider.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -117,7 +119,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           SizedBox(height: 5),
           ElevatedButton(
-            onPressed: () => AuthService().signOut(),
+            onPressed: () {
+              Provider.of<AppState>(context, listen: false).cancelNotificationListener();
+              AuthService().signOut();
+            },
             child: Text('Disconnect'),
           ),
         ],

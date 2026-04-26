@@ -19,7 +19,6 @@ class TripsScreen extends StatefulWidget {
 
 class _TripsScreenState extends State<TripsScreen> {
   late Future<List<TripModel>> _future;
-  bool _isLoading = false;
   List<TripModel> _trips = [];
 
   @override
