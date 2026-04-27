@@ -5,7 +5,7 @@ import 'package:japan_app/services/firestore_service.dart';
 class FriendService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  Future<void> sendFriendRequest(String fromId, String toId) async {
+  Future<bool> sendFriendRequest(String fromId, String toId) async {
     final user1 = await FirestoreService().getUser(fromId);
     if (user1 != null) {
       if (!user1.friends!.contains(toId) && !await requestExit(fromId, toId)) {
@@ -19,8 +19,11 @@ class FriendService {
             .collection('friendsRequest')
             .doc(id)
             .set(friendRequest.toMap());
+        return true;
       }
     }
+
+    return false;
   }
 
   Future<bool> requestExit(String id1, String id2) async {

@@ -34,7 +34,7 @@ class UserModel {
       firstName: map['firstName'],
       lastName: map['lastName'],
       photoUrl: map['photoUrl'],
-      friends: map['friends'] ?? [],
+      friends: (map['friends'] as List<dynamic>?)?.map((e) => e as String).toList() ?? [],
     );
   }
 }

@@ -44,6 +44,8 @@ class AppState extends ChangeNotifier {
   void cancelNotificationListener()
   {
     _sub?.cancel();
+    _sub = null;
+    pendingNotification = 0;
     notifyListeners();
   }
 }

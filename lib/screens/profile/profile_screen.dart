@@ -5,6 +5,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:japan_app/models/user_model.dart';
+import 'package:japan_app/screens/profile/friends_screen.dart';
 import 'package:japan_app/services/app_state.dart';
 import 'package:japan_app/services/auth_service.dart';
 import 'package:japan_app/services/firestore_service.dart';
@@ -26,6 +27,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _editProfile = false;
   String _localImagePath = '';
   final ImagePicker _picker = ImagePicker();
+  bool _loading = false;
 
   @override
   void initState() {
@@ -35,16 +37,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> getUser() async {
+    if (_loading) return;
+    _loading = true;
+    setState(() {
+      user = null;
+    });
     final result = await FirestoreService().getUser(
       FirebaseAuth.instance.currentUser!.uid,
     );
     user = result;
+    print(user);
     if (user != null) {
       firstName.text = user!.firstName;
       lastName.text = user?.lastName ?? '';
       email.text = user!.email;
     }
+    print('ici');
+    _loading = false;
     setState(() {});
+  }
+  
+  @override
+  void didChangeDependencies() {
+    // TODO: implement didChangeDependencies
+    super.didChangeDependencies();
+    //getUser();
   }
 
   @override
@@ -105,9 +122,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     email: email.text,
                     firstName: firstName.text,
                     lastName: lastName.text,
-                    photoUrl: _localImagePath.isNotEmpty
-                        ? url
-                        : user!.photoUrl,
+                    photoUrl: _localImagePath.isNotEmpty ? url : user!.photoUrl,
                   ),
                 );
               }
@@ -120,7 +135,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
           SizedBox(height: 5),
           ElevatedButton(
             onPressed: () {
-              Provider.of<AppState>(context, listen: false).cancelNotificationListener();
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) {
+                    return FriendsScreen();
+                  },
+                ),
+              );
+            },
+            child: Text('Friend List'),
+          ),
+          SizedBox(height: 5),
+          ElevatedButton(
+            onPressed: () {
+              Provider.of<AppState>(
+                context,
+                listen: false,
+              ).cancelNotificationListener();
               AuthService().signOut();
             },
             child: Text('Disconnect'),

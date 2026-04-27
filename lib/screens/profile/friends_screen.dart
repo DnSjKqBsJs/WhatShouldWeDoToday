@@ -1,9 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:japan_app/models/user_model.dart';
-import 'package:japan_app/services/app_state.dart';
 import 'package:japan_app/services/firestore_service.dart';
-import 'package:provider/provider.dart';
+import 'package:japan_app/services/friend_service.dart';
 
 class FriendsScreen extends StatefulWidget {
   const FriendsScreen({super.key});
@@ -14,6 +13,9 @@ class FriendsScreen extends StatefulWidget {
 
 class _FriendsScreenState extends State<FriendsScreen> {
   List<UserModel> _friends = [];
+  TextEditingController email = TextEditingController();
+  UserModel? user;
+  String? _feedbackMessage;
 
   @override
   void initState() {
@@ -29,35 +31,82 @@ class _FriendsScreenState extends State<FriendsScreen> {
     if (friendsIds != null) {
       _friends = await FirestoreService().getUsers(friendsIds.friends ?? []);
     }
-    setState(() {
-    });
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: ListView.builder(
-        itemCount: _friends.length,
-        itemBuilder: (context, index) {
-          return Card(
-            child: Padding(
-              padding: EdgeInsets.all(12.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+      appBar: AppBar(),
+      body: Column(
+        children: [
+          Text('Add Friend'),
+          Row(
+            children: [
+              Expanded(child: TextField(controller: email)),
+              ElevatedButton(
+                onPressed: () async {
+                  user = await FirestoreService().getUserByMail(email.text);
+                  if (user != null) {
+                    if(await FriendService().sendFriendRequest(
+                      FirebaseAuth.instance.currentUser!.uid,
+                      user!.id,
+                    ))
+                    {
+                      setState(() => _feedbackMessage = "Request sent!");
+                    }
+                    else
+                    {
+                      setState(() => _feedbackMessage = "Request already send");
+                    }
+                    Future.delayed(Duration(seconds: 2), () {
+                      if (context.mounted) {
+                        setState(() => _feedbackMessage = null);
+                      }
+                    });
+                  } else {
+                    setState(() {
+                      _feedbackMessage = "No users found";
+                    });
+                    Future.delayed(Duration(seconds: 2), () {
+                      if (context.mounted) {
+                        setState(() => _feedbackMessage = null);
+                      }
+                    });
+                  }
+                },
+                child: Text("Send"),
+              ),
+            ],
+          ),
+          if (_feedbackMessage != null) ...[Text(_feedbackMessage!)],
+          SizedBox(height: 5),
+          Expanded(
+            child: ListView.builder(
+              itemCount: _friends.length,
+              itemBuilder: (context, index) {
+                return Card(
+                  child: Padding(
+                    padding: EdgeInsets.all(12.0),
+                    child: Row(
                       children: [
-                        Text(_friends[index].firstName),
-                        Text(_friends[index].lastName),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(_friends[index].firstName),
+                              Text(_friends[index].lastName),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                ],
-              ),
+                );
+              },
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }

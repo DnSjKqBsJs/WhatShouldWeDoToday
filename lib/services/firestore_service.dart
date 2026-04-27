@@ -81,7 +81,13 @@ class FirestoreService {
 
   Future<UserModel> createUser(String email) async {
     final uid = FirebaseAuth.instance.currentUser!.uid;
-    final user = UserModel(id: uid, email: email, firstName: email.split('@')[0], lastName: '', photoUrl: '');
+    final user = UserModel(
+      id: uid,
+      email: email,
+      firstName: email.split('@')[0],
+      lastName: '',
+      photoUrl: '',
+    );
     await _db.collection('users').doc(uid).set(user.toMap());
     return user;
   }
@@ -102,24 +108,24 @@ class FirestoreService {
   }
 
   Future<UserModel?> getUser(String uid) async {
-  final doc = await _db.collection('users').doc(uid).get();
-  if (!doc.exists) return null;
-  return UserModel.fromMap(doc.data()!);
+    final doc = await _db.collection('users').doc(uid).get();
+    if (!doc.exists) return null;
+    return UserModel.fromMap(doc.data()!);
   }
 
-  Future<List<UserModel>> getUsers(List<String> friendsId) async
-  {
+  Future<List<UserModel>> getUsers(List<String> friendsId) async {
     List<UserModel> friends = [];
-    for(final element in friendsId)
-    {
-      final snapshot = await _db.collection('users').where('id', isEqualTo: element).get();
+    for (final element in friendsId) {
+      final snapshot = await _db
+          .collection('users')
+          .where('id', isEqualTo: element)
+          .get();
       friends.add(UserModel.fromMap(snapshot.docs.first.data()));
     }
     return friends;
   }
 
-  Future<void> updateUser(UserModel user) async
-  {
+  Future<void> updateUser(UserModel user) async {
     await _db.collection('users').doc(user.id).update(user.toMap());
   }
 }
