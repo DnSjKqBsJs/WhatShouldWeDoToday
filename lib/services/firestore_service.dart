@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
 import 'package:japan_app/models/trip_model.dart';
 import 'package:japan_app/models/user_model.dart';
 
@@ -23,6 +22,12 @@ class FirestoreService {
     );
     await _db.collection('trips').doc(id).set(updatedTrip.toMap());
     return updatedTrip;
+  }
+
+  Future<List<UserModel>> getUsersInTrip(String tripId) async
+  {
+    final snapshot = await _db.collection('trips').doc(tripId).collection('users').get();
+    return snapshot.docs.map((e) => UserModel.fromMap(e.data())).toList();
   }
 
   Future<List<TripModel>> getTrips(String userId) async {
