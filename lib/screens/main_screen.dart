@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:japan_app/models/friend_request_model.dart';
+import 'package:japan_app/models/trip_invitation_model.dart';
 import 'package:japan_app/models/user_model.dart';
 import 'package:japan_app/screens/map/map_screen.dart';
 import 'package:japan_app/screens/profile/profile_screen.dart';
@@ -8,6 +9,8 @@ import 'package:japan_app/screens/trip/trips_screen.dart';
 import 'package:japan_app/services/app_state.dart';
 import 'package:japan_app/services/firestore_service.dart';
 import 'package:japan_app/services/friend_service.dart';
+import 'package:japan_app/services/trip_invitation_service.dart';
+import 'package:japan_app/widgets/notification_card_widget.dart';
 import 'package:provider/provider.dart';
 
 class MainScreen extends StatefulWidget {
@@ -19,8 +22,46 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
   bool _notificationCenterOpen = false;
-  List<FriendRequestModel> notification = [];
-  List<UserModel?> users = [];
+  List<FriendRequestModel> friendNotification = [];
+  List<TripInvitationModel> tripNotification = [];
+  List<UserModel?> friendSender = [];
+  List<UserModel?> tripSender = [];
+
+  Future<void> tripRequestAction(
+    TripInvitationModel tripRequest,
+    int index,
+    bool accept,
+  ) async {
+    if (accept) {
+      await TripInvitationService().acceptTripInvitation(tripRequest);
+    } else {
+      await TripInvitationService().declineTripInvitation(tripRequest);
+    }
+    if (context.mounted) {
+      setState(() {
+        tripSender.removeAt(index);
+        tripNotification.removeAt(index);
+      });
+    }
+  }
+
+  Future<void> friendRequestAction(
+    FriendRequestModel friendRequest,
+    int index,
+    bool accept,
+  ) async {
+    if (accept) {
+      await FriendService().acceptFriendRequest(friendRequest);
+    } else {
+      await FriendService().declineFriendRequest(friendRequest);
+    }
+    if (context.mounted) {
+      setState(() {
+        friendSender.removeAt(index);
+        friendNotification.removeAt(index);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,12 +79,24 @@ class _MainScreenState extends State<MainScreen> {
             children: [
               GestureDetector(
                 onTap: () async {
-                  notification = await FriendService().getFriendRequests(
+                  friendNotification = await FriendService().getFriendRequests(
                     FirebaseAuth.instance.currentUser!.uid,
                   );
-                  users = [];
-                  for (final element in notification) {
-                    users.add(await FirestoreService().getUser(element.fromId));
+                  tripNotification = await TripInvitationService()
+                      .getTripInvitations(
+                        FirebaseAuth.instance.currentUser!.uid,
+                      );
+                  friendSender = [];
+                  for (final element in friendNotification) {
+                    friendSender.add(
+                      await FirestoreService().getUser(element.fromId),
+                    );
+                  }
+                  tripSender = [];
+                  for (final element in tripNotification) {
+                    tripSender.add(
+                      await FirestoreService().getUser(element.fromId),
+                    );
                   }
                   setState(() {
                     _notificationCenterOpen = !_notificationCenterOpen;
@@ -122,63 +175,20 @@ class _MainScreenState extends State<MainScreen> {
                           child: Column(
                             children: [
                               Text('Notifications ici'),
-                              ...notification.asMap().entries.map(
-                                (e) => Card(
-                                  child: Card(
-                                    child: Padding(
-                                      padding: EdgeInsets.all(3),
-                                      child: Row(
-                                        children: [
-                                          Expanded(
-                                            child: Column(
-                                              children: [
-                                                Text(
-                                                  'Invitation à etre amis de :',
-                                                ),
-                                                Text(users[e.key]!.firstName),
-                                              ],
-                                            ),
-                                          ),
-                                          ElevatedButton(
-                                            onPressed: () async {
-                                              await FriendService()
-                                                  .acceptFriendRequest(
-                                                    notification[e.key],
-                                                  );
-                                              if (context.mounted) {
-                                                setState(() {
-                                                  users.removeAt(e.key);
-                                                  notification.removeAt(e.key);
-                                                });
-                                              }
-                                            },
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.green,
-                                            ),
-                                            child: Text('Accept'),
-                                          ),
-                                          ElevatedButton(
-                                            onPressed: () async {
-                                              await FriendService()
-                                                  .declineFriendRequest(
-                                                    notification[e.key],
-                                                  );
-                                              if (context.mounted) {
-                                                setState(() {
-                                                  users.removeAt(e.key);
-                                                  notification.removeAt(e.key);
-                                                });
-                                              }
-                                            },
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.red,
-                                            ),
-                                            child: Text('Refuse'),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
+                              ...friendNotification.asMap().entries.map(
+                                (e) => NotificationCardWidget(
+                                  sender: friendSender[e.key]!,
+                                  type: 'friendRequest',
+                                  onAccept: () => friendRequestAction(friendNotification[e.key], e.key, true),
+                                  onRefuse: () => friendRequestAction(friendNotification[e.key], e.key, false),
+                                ),
+                              ),
+                              ...tripNotification.asMap().entries.map(
+                                (e) => NotificationCardWidget(
+                                  sender: tripSender[e.key]!,
+                                  type: 'tripRequest',
+                                  onAccept: () => tripRequestAction(tripNotification[e.key], e.key, true) ,
+                                  onRefuse: () => tripRequestAction(tripNotification[e.key], e.key, false),
                                 ),
                               ),
                             ],
@@ -201,56 +211,3 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 }
-
-// return Card(
-//                                     child: Padding(
-//                                       padding: EdgeInsets.all(2),
-//                                       child: Row(
-//                                         children: [
-//                                           Expanded(
-//                                             child: Column(
-//                                               children: [
-//                                                 Text("Invitation d'amis de:"),
-//                                                 Text(
-//                                                   FirestoreService()
-//                                                       .getUser(
-//                                                         notification[index]
-//                                                             .fromId,
-//                                                       )
-//                                                       .firstName,
-//                                                 ),
-//                                               ],
-//                                             ),
-//                                           ),
-//                                           ElevatedButton(
-//                                             onPressed: () {
-//                                               FriendService()
-//                                                   .acceptFriendRequest(
-//                                                     notification[index],
-//                                                   );
-//                                             },
-//                                             style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-//                                             ),
-//                                             child: Text("Accept"),
-//                                           ),
-//                                           Padding(padding: EdgeInsets.all(3)),
-//                                           ElevatedButton(
-//                                             onPressed: () {
-//                                               FriendService()
-//                                                   .declineFriendRequest(
-//                                                     notification[index],
-//                                                   );
-//                                             },
-//                                             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-//                                             ),
-//                                             child: Text("Refuse"),
-//                                           ),
-//                                         ],
-//                                       ),
-//                                     ),
-//                                   );
-//                                 },
-//                               ),
-//                             ],
-//                           ),
-//                         ),
