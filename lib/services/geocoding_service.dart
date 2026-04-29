@@ -31,7 +31,7 @@ class GeocodingService {
     final data = json.decode(response.body) as List;
     List<CountryResult> cnt = [];
     if (data.isEmpty) return [];
-    data.forEach((n) {
+    for (var n in data) {
       if (n['addresstype'] == 'country') {
         cnt.add(
           CountryResult(
@@ -41,7 +41,7 @@ class GeocodingService {
           ),
         );
       }
-    });
+    }
     return cnt;
   }
 

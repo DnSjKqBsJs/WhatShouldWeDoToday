@@ -3,11 +3,13 @@ import 'package:japan_app/models/trip_invitation_model.dart';
 import 'package:japan_app/models/user_model.dart';
 import 'package:japan_app/services/firestore_service.dart';
 
+enum RequestIssue {successSend, alreadySend, alreadyInTrip}
+
 class TripInvitationService {
 
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  Future<bool> sendTripInvitation(String fromId, String toId, String tripId) async
+  Future<RequestIssue> sendTripInvitation(String fromId, String toId, String tripId) async
   {
     List<UserModel> usersInTrip = await FirestoreService().getUsersInTrip(tripId);
     List<String> usersIdInTrip = [];
@@ -15,14 +17,25 @@ class TripInvitationService {
     {
       usersIdInTrip.add(element.id);
     }
-    if(!usersIdInTrip.contains(toId) && !await requestExit(fromId, toId))
+    if(!usersIdInTrip.contains(toId))
     {
-      final id = _db.collection('tripInvitation').doc().id;
-      TripInvitationModel finalTrip = TripInvitationModel(invitationId: id, fromId: fromId, toId: toId, tripId: tripId);
-      await _db.collection('tripInvitation').doc(id).set(finalTrip.toMap());
-      return true;
+      if(!await requestExit(fromId, toId))
+      {
+        final id = _db.collection('tripInvitation').doc().id;
+        TripInvitationModel finalTrip = TripInvitationModel(invitationId: id, fromId: fromId, toId: toId, tripId: tripId);
+        await _db.collection('tripInvitation').doc(id).set(finalTrip.toMap());
+        return RequestIssue.successSend;
+      }
+      else
+      {
+        return RequestIssue.alreadySend;
+      }
+      
     }
-    return false;
+    else
+    {
+      return RequestIssue.alreadyInTrip;
+    }
   }
 
   Future<bool> requestExit(String fromId, String toId) async

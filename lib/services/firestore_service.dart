@@ -38,7 +38,6 @@ class FirestoreService {
         .get();
     return snapshot.docs.map((doc) => TripModel.fromMap(doc.data())).toList();
   }
-
   Future<void> updateTrip(TripModel trip, String tripId) async {
     await _db.collection('trips').doc(tripId).update(trip.toMap());
   }

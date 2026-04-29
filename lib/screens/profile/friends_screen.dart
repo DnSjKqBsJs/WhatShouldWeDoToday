@@ -48,16 +48,28 @@ class _FriendsScreenState extends State<FriendsScreen> {
                 onPressed: () async {
                   user = await FirestoreService().getUserByMail(email.text);
                   if (user != null) {
-                    if(await FriendService().sendFriendRequest(
+                    final result = await FriendService().sendFriendRequest(
                       FirebaseAuth.instance.currentUser!.uid,
                       user!.id,
-                    ))
+                    );
+                    switch(result)
                     {
-                      setState(() => _feedbackMessage = "Request sent!");
-                    }
-                    else
-                    {
-                      setState(() => _feedbackMessage = "Request already send");
+                      case RequestIssue.requestSend:
+                        setState(() {
+                          _feedbackMessage = "Request sent!";
+                        });
+                      case RequestIssue.alreadyFriend:
+                        setState(() {
+                          _feedbackMessage = "User Already friend with you";
+                        });
+                      case RequestIssue.requestExit:
+                      setState(() {
+                        _feedbackMessage = "Request Already Send";
+                      });
+                      case RequestIssue.userInvalid:
+                        setState(() {
+                          _feedbackMessage = "Invalid User";
+                        });
                     }
                     Future.delayed(Duration(seconds: 2), () {
                       if (context.mounted) {

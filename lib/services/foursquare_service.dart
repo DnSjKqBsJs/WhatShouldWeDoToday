@@ -27,7 +27,7 @@ class FoursquareService {
     print('Body: ${response.body}');
     final List data = json.decode(response.body)['results'];
     
-    data.forEach((n) {
+    for (var n in data) {
       foursquarePlaceFound.add(
         FoursquarePlace(
           fsqPlaceId: n['fsq_place_id'],
@@ -37,7 +37,7 @@ class FoursquareService {
           formattedAddress: n['location']['formatted_address'],
         ),
       );
-    });
+    }
     }catch (e)
     {
         print('Erreur: $e');

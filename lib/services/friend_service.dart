@@ -2,28 +2,43 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:japan_app/models/friend_request_model.dart';
 import 'package:japan_app/services/firestore_service.dart';
 
+enum RequestIssue { requestSend, requestExit, alreadyFriend, userInvalid }
+
 class FriendService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  Future<bool> sendFriendRequest(String fromId, String toId) async {
+  Future<RequestIssue> sendFriendRequest(String fromId, String toId) async {
     final user1 = await FirestoreService().getUser(fromId);
     if (user1 != null) {
-      if (!user1.friends!.contains(toId) && !await requestExit(fromId, toId)) {
-        final id = _db.collection('friendsRequest').doc().id;
-        final friendRequest = FriendRequestModel(
-          requestId: id,
-          fromId: fromId,
-          toId: toId,
-        );
-        await _db
-            .collection('friendsRequest')
-            .doc(id)
-            .set(friendRequest.toMap());
-        return true;
+      if (!user1.friends!.contains(toId)) {
+        if (!await requestExit(fromId, toId)) {
+          final id = _db.collection('friendsRequest').doc().id;
+          final friendRequest = FriendRequestModel(
+            requestId: id,
+            fromId: fromId,
+            toId: toId,
+          );
+          await _db
+              .collection('friendsRequest')
+              .doc(id)
+              .set(friendRequest.toMap());
+          return RequestIssue.requestSend;
+        }
+        else
+        {
+          return RequestIssue.requestExit;
+        }
+      }
+      else
+      {
+        return RequestIssue.alreadyFriend;
       }
     }
+    else
+    {
+      return RequestIssue.userInvalid;
+    }
 
-    return false;
   }
 
   Future<bool> requestExit(String id1, String id2) async {
@@ -79,6 +94,8 @@ class FriendService {
         .collection('friendsRequest')
         .where('toId', isEqualTo: toId)
         .get();
-    return snapshot.docs.map((doc) => FriendRequestModel.fromMap(doc.data())).toList();
+    return snapshot.docs
+        .map((doc) => FriendRequestModel.fromMap(doc.data()))
+        .toList();
   }
 }

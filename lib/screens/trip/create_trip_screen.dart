@@ -2,10 +2,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:japan_app/models/trip_model.dart';
 import 'package:japan_app/screens/main_screen.dart';
-import 'package:japan_app/services/app_state.dart';
 import 'package:japan_app/services/firestore_service.dart';
 import 'package:japan_app/services/geocoding_service.dart';
-import 'package:provider/provider.dart';
 
 class CreateTripScreen extends StatefulWidget {
   const CreateTripScreen({super.key});
