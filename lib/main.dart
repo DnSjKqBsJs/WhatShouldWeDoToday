@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:japan_app/screens/auth/login_screen.dart';
 import 'package:japan_app/screens/main_screen.dart';
 import 'package:japan_app/services/app_state.dart';
+import 'package:japan_app/theme.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 
@@ -21,6 +22,7 @@ class MyApp extends StatelessWidget {
     return ChangeNotifierProvider(
       create: (_) => AppState(),
       child: MaterialApp(
+        theme: AppTheme.theme,
         debugShowCheckedModeBanner: false,
         title: 'WanderMap',
         home: StreamBuilder(

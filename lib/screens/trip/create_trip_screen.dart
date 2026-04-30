@@ -11,7 +11,9 @@ import 'package:japan_app/services/firestore_service.dart';
 import 'package:japan_app/services/geocoding_service.dart';
 
 class CreateTripScreen extends StatefulWidget {
-  const CreateTripScreen({super.key});
+  const CreateTripScreen({super.key, this.trip});
+
+  final TripModel? trip;
 
   @override
   State<CreateTripScreen> createState() => _CreateTripScreenState();
@@ -23,6 +25,20 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
   String _localImagePath = '';
   final ImagePicker _picker = ImagePicker();
   CountryResult _selectedCountry = CountryResult(name: "", lat: 0, lng: 0);
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.trip != null) {
+      tripName.text = widget.trip!.name;
+      tripDestination.text = widget.trip!.countryName;
+      _selectedCountry = CountryResult(
+        lat: widget.trip!.centerLat,
+        lng: widget.trip!.centerLng,
+        name: widget.trip!.countryName,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +66,8 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                   radius: 50,
                   backgroundImage: _localImagePath.isNotEmpty
                       ? FileImage(File(_localImagePath))
+                      : (widget.trip?.coverUrl ?? '').isNotEmpty
+                      ? NetworkImage(widget.trip!.coverUrl!)
                       : null,
                   child: _localImagePath.isEmpty
                       ? Icon(Icons.supervised_user_circle, size: 50)
@@ -73,50 +91,79 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
             ),
             Padding(padding: EdgeInsets.all(4.0)),
-            Autocomplete<CountryResult>(
-              optionsBuilder: (tripDestination) {
-                if (tripDestination.text == '') {
-                  return const Iterable<CountryResult>.empty();
-                }
-                return GeocodingService().searchCountry(tripDestination.text);
-              },
-              displayStringForOption: (CountryResult option) => option.name,
-              onSelected: (CountryResult selectedCountry) {
-                _selectedCountry = selectedCountry;
-              },
-            ),
+            if (widget.trip != null) ...[
+              TextField(controller: tripDestination, enabled: false),
+            ] else ...[
+              Autocomplete<CountryResult>(
+                optionsBuilder: (tripDestination) {
+                  if (tripDestination.text == '') {
+                    return const Iterable<CountryResult>.empty();
+                  }
+                  return GeocodingService().searchCountry(tripDestination.text);
+                },
+                displayStringForOption: (CountryResult option) => option.name,
+                onSelected: (CountryResult selectedCountry) {
+                  _selectedCountry = selectedCountry;
+                },
+              ),
+            ],
+
             Padding(padding: EdgeInsets.all(4.0)),
             ElevatedButton(
               onPressed: () async {
                 if (_selectedCountry.name.isEmpty) {
                   return;
                 }
-                final id = FirebaseFirestore.instance.collection('trips').doc().id;
+                final id = FirebaseFirestore.instance
+                    .collection('trips')
+                    .doc()
+                    .id;
+                final storageId = widget.trip != null ? widget.trip!.id : id;
                 final ref = FirebaseStorage.instance.ref().child(
-                  'trip/$id/cover.jpg',);
+                  'trip/$storageId/cover.jpg',
+                );
                 String url = '';
-                if (_localImagePath.isNotEmpty)
-                {
+                if (_localImagePath.isNotEmpty) {
                   await ref.putFile(File(_localImagePath));
                   url = await ref.getDownloadURL();
                 }
 
-                TripModel tripModel = await FirestoreService().createTrip(
-                  TripModel(
-                    id: id,
-                    name: tripName.text,
-                    countryName: _selectedCountry.name,
-                    centerLat: _selectedCountry.lat,
-                    centerLng: _selectedCountry.lng,
-                    users: [FirebaseAuth.instance.currentUser!.uid],
-                    order: 0,
-                    coverUrl: _localImagePath.isNotEmpty ? url : '',
-                  ),
-                );
-                // Provider.of<AppState>(
-                //   context,
-                //   listen: false,
-                // ).setCurrentTrip(tripModel); Met direct le trip crée en current trip
+                if (widget.trip != null) {
+                  await FirestoreService().updateTrip(
+                    TripModel(
+                      id: storageId,
+                      name: tripName.text,
+                      countryName: widget.trip!.countryName,
+                      centerLat: widget.trip!.centerLat,
+                      centerLng: widget.trip!.centerLng,
+                      users: widget.trip!.users,
+                      order: widget.trip!.order,
+                      coverUrl: _localImagePath.isNotEmpty
+                          ? url
+                          : widget.trip!.coverUrl!.isNotEmpty
+                          ? widget.trip!.coverUrl
+                          : '',
+                    ),
+                    storageId,
+                  );
+                } else {
+                  TripModel tripModel = await FirestoreService().createTrip(
+                    TripModel(
+                      id: storageId,
+                      name: tripName.text,
+                      countryName: _selectedCountry.name,
+                      centerLat: _selectedCountry.lat,
+                      centerLng: _selectedCountry.lng,
+                      users: [FirebaseAuth.instance.currentUser!.uid],
+                      order: 0,
+                      coverUrl: _localImagePath.isNotEmpty ? url : '',
+                    ),
+                  );
+                  // Provider.of<AppState>(
+                  //   context,
+                  //   listen: false,
+                  // ).setCurrentTrip(tripModel); Met direct le trip crée en current trip
+                }
                 Navigator.pop(
                   context,
                   MaterialPageRoute(
@@ -126,7 +173,7 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                   ),
                 );
               },
-              child: Text('Create'),
+              child: widget.trip == null ? Text('Create') : Text('Update'),
             ),
           ],
         ),

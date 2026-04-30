@@ -10,6 +10,8 @@ import 'package:japan_app/services/app_state.dart';
 import 'package:japan_app/services/firestore_service.dart';
 import 'package:japan_app/services/friend_service.dart';
 import 'package:japan_app/services/trip_invitation_service.dart';
+import 'package:japan_app/theme.dart';
+import 'package:japan_app/widgets/floating_nav_bar.dart';
 import 'package:japan_app/widgets/notification_card_widget.dart';
 import 'package:provider/provider.dart';
 
@@ -70,72 +72,7 @@ class _MainScreenState extends State<MainScreen> {
     final pendingCount = context.watch<AppState>().pendingNotification;
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      extendBodyBehindAppBar:
-          true, // le body passe derrière l'appbar transparence réelle
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          Stack(
-            children: [
-              GestureDetector(
-                onTap: () async {
-                  friendNotification = await FriendService().getFriendRequests(
-                    FirebaseAuth.instance.currentUser!.uid,
-                  );
-                  tripNotification = await TripInvitationService()
-                      .getTripInvitations(
-                        FirebaseAuth.instance.currentUser!.uid,
-                      );
-                  friendSender = [];
-                  for (final element in friendNotification) {
-                    friendSender.add(
-                      await FirestoreService().getUser(element.fromId),
-                    );
-                  }
-                  tripSender = [];
-                  for (final element in tripNotification) {
-                    tripSender.add(
-                      await FirestoreService().getUser(element.fromId),
-                    );
-                  }
-                  setState(() {
-                    _notificationCenterOpen = !_notificationCenterOpen;
-                  });
-                },
-                child: Container(
-                  width: 44,
-                  height: 44,
-                  margin: EdgeInsets.only(right: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    _notificationCenterOpen ? Icons.close : Icons.notifications,
-                    size: 20,
-                    color: Colors.black,
-                  ),
-                ),
-              ),
-              if (pendingCount > 0)
-                Positioned(
-                  top: 6,
-                  right: 18,
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: Colors.redAccent,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-        ],
-      ),
+      backgroundColor: AppTheme.bg,
       body: Stack(
         children: [
           IndexedStack(
@@ -227,16 +164,25 @@ class _MainScreenState extends State<MainScreen> {
                 ),
               ),
             ),
+
+          Positioned(
+            bottom: 28,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: FloatingNavBar(
+                currentIndex: _currentIndex,
+                onTap: (i) {
+                  setState(() => _currentIndex = i);
+                },
+                notifCount: Provider.of<AppState>(
+                  context,
+                  listen: false,
+                ).pendingNotification,
+              ),
+            ),
+          ),
         ],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        items: [
-          BottomNavigationBarItem(icon: Icon(Icons.flight), label: 'Trips'),
-          BottomNavigationBarItem(icon: Icon(Icons.map), label: 'Map'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-        ],
-        onTap: (value) => setState(() => _currentIndex = value),
       ),
     );
   }
