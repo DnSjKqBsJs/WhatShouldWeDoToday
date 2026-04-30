@@ -114,7 +114,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
                 await ref.putFile(File(_localImagePath));
 
-                // 2. Récupérer l'URL publique
                 final url = await ref.getDownloadURL();
                 FirestoreService().updateUser(
                   UserModel(

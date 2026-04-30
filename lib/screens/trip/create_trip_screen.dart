@@ -1,5 +1,10 @@
+import 'dart:io';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:japan_app/models/trip_model.dart';
 import 'package:japan_app/screens/main_screen.dart';
 import 'package:japan_app/services/firestore_service.dart';
@@ -15,7 +20,10 @@ class CreateTripScreen extends StatefulWidget {
 class _CreateTripScreenState extends State<CreateTripScreen> {
   final tripName = TextEditingController();
   final tripDestination = TextEditingController();
+  String _localImagePath = '';
+  final ImagePicker _picker = ImagePicker();
   CountryResult _selectedCountry = CountryResult(name: "", lat: 0, lng: 0);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -26,6 +34,30 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Center(
+              child: GestureDetector(
+                onTap: () async {
+                  final XFile? image = await _picker.pickImage(
+                    source: ImageSource.gallery,
+                  );
+                  if (image != null) {
+                    setState(() {
+                      _localImagePath = image.path;
+                    });
+                  }
+                },
+                child: CircleAvatar(
+                  radius: 50,
+                  backgroundImage: _localImagePath.isNotEmpty
+                      ? FileImage(File(_localImagePath))
+                      : null,
+                  child: _localImagePath.isEmpty
+                      ? Icon(Icons.supervised_user_circle, size: 50)
+                      : null,
+                ),
+              ),
+            ),
+
             Text(
               "Trip Name",
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
@@ -48,27 +80,37 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
                 }
                 return GeocodingService().searchCountry(tripDestination.text);
               },
-                displayStringForOption: (CountryResult option) => option.name,
-                onSelected: (CountryResult selectedCountry) {
-                  _selectedCountry = selectedCountry;
+              displayStringForOption: (CountryResult option) => option.name,
+              onSelected: (CountryResult selectedCountry) {
+                _selectedCountry = selectedCountry;
               },
             ),
             Padding(padding: EdgeInsets.all(4.0)),
             ElevatedButton(
               onPressed: () async {
-                if(_selectedCountry.name.isEmpty)
-                {
+                if (_selectedCountry.name.isEmpty) {
                   return;
                 }
+                final id = FirebaseFirestore.instance.collection('trips').doc().id;
+                final ref = FirebaseStorage.instance.ref().child(
+                  'trip/$id/cover.jpg',);
+                String url = '';
+                if (_localImagePath.isNotEmpty)
+                {
+                  await ref.putFile(File(_localImagePath));
+                  url = await ref.getDownloadURL();
+                }
+
                 TripModel tripModel = await FirestoreService().createTrip(
                   TripModel(
-                    id: '',
+                    id: id,
                     name: tripName.text,
                     countryName: _selectedCountry.name,
                     centerLat: _selectedCountry.lat,
                     centerLng: _selectedCountry.lng,
                     users: [FirebaseAuth.instance.currentUser!.uid],
                     order: 0,
+                    coverUrl: _localImagePath.isNotEmpty ? url : '',
                   ),
                 );
                 // Provider.of<AppState>(
@@ -92,7 +134,3 @@ class _CreateTripScreenState extends State<CreateTripScreen> {
     );
   }
 }
-
-
-
-

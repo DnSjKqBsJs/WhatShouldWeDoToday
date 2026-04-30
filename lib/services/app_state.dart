@@ -7,6 +7,7 @@ import 'package:japan_app/models/trip_model.dart';
 class AppState extends ChangeNotifier {
   TripModel? currentTrip;
   bool mapNeedsRefresh = false;
+  bool tripNeedRefresh = true;
   int _friendCount = 0;
   int _tripsCount = 0;
   int pendingNotification = 0;
@@ -30,6 +31,15 @@ class AppState extends ChangeNotifier {
 
   void mapRefreshDone() {
     mapNeedsRefresh = false;
+  }
+
+  void requestTripRefresh() {
+    tripNeedRefresh = true;
+    notifyListeners();
+  }
+
+  void tripRefreshDone() {
+    tripNeedRefresh = false;
   }
 
   void listenToNotification(String userId) {

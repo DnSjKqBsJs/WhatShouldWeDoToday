@@ -10,17 +10,17 @@ class FirestoreService {
     final existing = await getTrips(FirebaseAuth.instance.currentUser!.uid);
     final order = existing.length;
 
-    final id = _db.collection('trips').doc().id;
     final updatedTrip = TripModel(
-      id: id,
+      id: trip.id,
       name: trip.name,
       countryName: trip.countryName,
       centerLat: trip.centerLat,
       centerLng: trip.centerLng,
       users: trip.users,
       order: order,
+      coverUrl: trip.coverUrl
     );
-    await _db.collection('trips').doc(id).set(updatedTrip.toMap());
+    await _db.collection('trips').doc(trip.id).set(updatedTrip.toMap());
     return updatedTrip;
   }
 
@@ -38,6 +38,7 @@ class FirestoreService {
         .get();
     return snapshot.docs.map((doc) => TripModel.fromMap(doc.data())).toList();
   }
+
   Future<void> updateTrip(TripModel trip, String tripId) async {
     await _db.collection('trips').doc(tripId).update(trip.toMap());
   }

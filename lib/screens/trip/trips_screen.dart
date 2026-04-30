@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:japan_app/models/trip_model.dart';
 import 'package:japan_app/screens/trip/create_trip_screen.dart';
 import 'package:japan_app/screens/trip/day_screen.dart';
@@ -38,6 +41,13 @@ class _TripsScreenState extends State<TripsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final appState = context.watch<AppState>();
+    if (appState.tripNeedRefresh) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _refresh();
+        appState.tripRefreshDone();
+      });
+    }
     return Scaffold(
       body: FutureBuilder<List<TripModel>>(
         future: _future,
@@ -60,20 +70,23 @@ class _TripsScreenState extends State<TripsScreen> {
                 _trips.insert(newIndex, item);
 
                 for (int i = 0; i < _trips.length; i++) {
-                  FirestoreService().updateTrip(
-                    TripModel(
-                      id: _trips[i].id,
-                      name: _trips[i].name,
-                      countryName: _trips[i].countryName,
-                      centerLat: _trips[i].centerLat,
-                      centerLng: _trips[i].centerLng,
-                      users: _trips[i].users,
-                      order: i,
-                    ),
-                    _trips[i].id,
-                  ).catchError((e) {
-                    _refresh();
-                  });
+                  FirestoreService()
+                      .updateTrip(
+                        TripModel(
+                          id: _trips[i].id,
+                          name: _trips[i].name,
+                          countryName: _trips[i].countryName,
+                          centerLat: _trips[i].centerLat,
+                          centerLng: _trips[i].centerLng,
+                          users: _trips[i].users,
+                          order: i,
+                          coverUrl: _trips[i].coverUrl,
+                        ),
+                        _trips[i].id,
+                      )
+                      .catchError((e) {
+                        _refresh();
+                      });
                 }
               });
             },
@@ -85,6 +98,19 @@ class _TripsScreenState extends State<TripsScreen> {
                   padding: EdgeInsets.all(12.0),
                   child: Row(
                     children: [
+                      CircleAvatar(
+                        backgroundImage:
+                            (_trips[index].coverUrl != null &&
+                                _trips[index].coverUrl!.isNotEmpty)
+                            ? NetworkImage(_trips[index].coverUrl!)
+                            : null,
+                        child:
+                            (_trips[index].coverUrl == null ||
+                                _trips[index].coverUrl!.isEmpty)
+                            ? Icon(Icons.flight)
+                            : null,
+                      ),
+                      SizedBox(width: 5,),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,

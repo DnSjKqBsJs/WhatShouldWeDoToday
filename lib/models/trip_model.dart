@@ -6,6 +6,7 @@ class TripModel {
   final double centerLng;
   final List<String> users;
   final int order;
+  final String? coverUrl;
 
   TripModel({
     required this.id,
@@ -15,6 +16,7 @@ class TripModel {
     required this.centerLng,
     required this.users,
     required this.order,
+    this.coverUrl,
   });
 
   Map<String, dynamic> toMap() {
@@ -25,7 +27,8 @@ class TripModel {
       'centerLat': centerLat,
       'centerLng': centerLng,
       'users': users,
-      'order' : order
+      'order' : order,
+      'coverUrl' : coverUrl
     };
   }
 
@@ -38,6 +41,7 @@ class TripModel {
       centerLng: map['centerLng'].toDouble(),
       users: List<String>.from(map['users']),
       order: map['order'],
+      coverUrl: map['coverUrl'] ?? ''
     );
   }
 }

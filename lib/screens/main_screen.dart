@@ -32,6 +32,7 @@ class _MainScreenState extends State<MainScreen> {
     int index,
     bool accept,
   ) async {
+    final appState = Provider.of<AppState>(context, listen: false);
     if (accept) {
       await TripInvitationService().acceptTripInvitation(tripRequest);
     } else {
@@ -42,6 +43,7 @@ class _MainScreenState extends State<MainScreen> {
         tripSender.removeAt(index);
         tripNotification.removeAt(index);
       });
+      if (accept) appState.requestTripRefresh();
     }
   }
 
@@ -179,16 +181,44 @@ class _MainScreenState extends State<MainScreen> {
                                 (e) => NotificationCardWidget(
                                   sender: friendSender[e.key]!,
                                   type: 'friendRequest',
-                                  onAccept: () => friendRequestAction(friendNotification[e.key], e.key, true),
-                                  onRefuse: () => friendRequestAction(friendNotification[e.key], e.key, false),
+                                  onAccept: () {
+                                    friendRequestAction(
+                                      friendNotification[e.key],
+                                      e.key,
+                                      true,
+                                    );
+                                    Provider.of<AppState>(
+                                      context,
+                                      listen: false,
+                                    ).requestMapRefresh();
+                                  },
+                                  onRefuse: () => friendRequestAction(
+                                    friendNotification[e.key],
+                                    e.key,
+                                    false,
+                                  ),
                                 ),
                               ),
                               ...tripNotification.asMap().entries.map(
                                 (e) => NotificationCardWidget(
                                   sender: tripSender[e.key]!,
                                   type: 'tripRequest',
-                                  onAccept: () => tripRequestAction(tripNotification[e.key], e.key, true) ,
-                                  onRefuse: () => tripRequestAction(tripNotification[e.key], e.key, false),
+                                  onAccept: () {
+                                    tripRequestAction(
+                                      tripNotification[e.key],
+                                      e.key,
+                                      true,
+                                    );
+                                    Provider.of<AppState>(
+                                      context,
+                                      listen: false,
+                                    ).requestTripRefresh();
+                                  },
+                                  onRefuse: () => tripRequestAction(
+                                    tripNotification[e.key],
+                                    e.key,
+                                    false,
+                                  ),
                                 ),
                               ),
                             ],
